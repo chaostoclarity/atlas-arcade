@@ -189,6 +189,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #ov path{fill:color-mix(in srgb,var(--bad) 32%,transparent);stroke:var(--bad);stroke-width:1.8;vector-effect:non-scaling-stroke}
 #ov text{font-family:var(--display);font-weight:800;fill:var(--bad);text-anchor:middle;paint-order:stroke;stroke:var(--halo);pointer-events:none}
 .note{font-size:12.5px;color:var(--muted);margin:0}
+.helpbtn{width:40px;height:40px;flex:none;border-radius:50%;border:2px solid var(--accent);background:var(--panel);color:var(--accent);font-family:var(--display);font-weight:800;font-size:20px;cursor:pointer;line-height:1}
+.helpbtn:hover{background:var(--accent);color:var(--accent-ink)}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(8,16,24,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .sheet{background:var(--panel);color:var(--ink);border-radius:18px;padding:22px 22px 20px;max-width:520px;width:100%;max-height:100%;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.35);display:grid;gap:10px}
+.modal h2{font-family:var(--display);font-weight:800;font-size:28px;margin:0;line-height:1.1}
+.modal .goal{margin:0;font-size:18px;font-weight:600;color:var(--accent)}
+.modal ol{margin:4px 0 6px;padding-left:22px;display:grid;gap:8px;font-size:17px;line-height:1.45}
+.modal .btn{width:100%;min-height:52px;font-size:18px}
+.lbl.nm{font-weight:600;fill:var(--muted)}
+.clues{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.clues li{background:var(--accent-soft);border-radius:10px;padding:9px 12px;font-weight:600}
+.grow.headrow{background:none;padding-block:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.temp{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700;color:#1b1b1b;white-space:nowrap}
 .loading{padding:60px 20px;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .qbar{display:none}
@@ -215,8 +228,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .app{max-width:none;padding:0;gap:0}
   .top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border-bottom:1px solid var(--line);padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .top .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .brand{min-width:0}.brand h1{font-size:22px;white-space:nowrap}.globe-mark{width:26px;height:26px}
-  .who select{height:46px;font-size:17px;font-weight:700;max-width:40vw}
+  .brand{min-width:0;overflow:hidden}.brand h1{font-size:clamp(18px,5.4vw,22px);white-space:nowrap}.globe-mark{width:26px;height:26px}
+  .who{gap:8px}.who select{height:46px;font-size:17px;font-weight:700;max-width:34vw}
   .who input{height:46px;font-size:17px;width:40vw}
   .pickers{grid-column:1/-1;display:flex;flex-wrap:nowrap;gap:8px}
   .pickers select{flex:1;min-width:0;width:0;height:48px;font-size:17px}
@@ -333,14 +346,20 @@ let ST = store.get('aa-stats:' + S.player, {});
 const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player});
 function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
 function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
-function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.max(.2, 1 + 2*v[1] - .6*v[0]) : 1.5; }
+function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.min(3, Math.max(.3, 1 + v[1] - .5*v[0])) : 1.5; }
+const RECENT = {};
 function known(mode, arr){ return arr.filter(d => { const v = ST[mode+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length; }
+// Weighted random draw: missed places come up more often, but never every time, and recent ones sit out.
 function pickN(mode, arr, n){
-  const pool = arr.slice(), out = [];
+  const pool = arr.slice(), out = [], recent = RECENT[mode] || [];
+  const room = pool.length > recent.length + n;
   while (out.length < n && pool.length){
-    const ws = pool.map(d => weight(mode, d.id) * (0.6 + Math.random()*0.8));
-    let i = ws.indexOf(Math.max(...ws)); out.push(pool.splice(i,1)[0]);
+    const ws = pool.map(d => weight(mode, d.id) * (room && recent.includes(d.id) ? .02 : 1));
+    let r = Math.random() * ws.reduce((a,b) => a+b, 0), i = 0;
+    while (i < ws.length - 1 && (r -= ws[i]) > 0) i++;
+    out.push(pool.splice(i,1)[0]);
   }
+  RECENT[mode] = [...out.map(d => d.id), ...recent].slice(0, Math.min(15, Math.floor(arr.length/2)));
   return out;
 }
 const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j = Math.random()*(i+1)|0; [a[i],a[j]] = [a[j],a[i]]; } return a; };
@@ -415,11 +434,13 @@ function renderPlayers(adding=false){
     $('#npok').onclick = add; $('#np').onkeydown = e => { if (e.key === 'Enter') add(); if (e.key === 'Escape') renderPlayers(); };
     $('#npx').onclick = () => renderPlayers(); $('#np').focus(); return;
   }
-  w.innerHTML = `<label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select>`;
+  w.innerHTML = `<button type="button" class="helpbtn" id="help" aria-label="How to play">?</button><label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select>`;
+  $('#help').onclick = () => showRules(document.querySelector('.main').dataset.mode || 'find');
   $('#pl').onchange = e => { if (e.target.value === '__new'){ e.target.value = S.player; renderPlayers(true); } else switchPlayer(e.target.value); };
 }
 let cleanup = null;
 function route(){
+  document.querySelector('.modal')?.remove();
   const m = (location.hash || '#find').slice(1);
   const mode = MODES.find(x => x.id === m) ? m : 'find';
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.m === mode ? 'page' : 'false'));
@@ -433,6 +454,7 @@ function route(){
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
+  setTimeout(() => maybeRules(mode), 50);
   cleanup = ({atlas:modeAtlas, players:modePlayers, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
@@ -447,6 +469,95 @@ function toast(msg, kind=''){
   clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 1800);
 }
 function flagImg(d, cls=''){ return d.c2 ? `<img class="${cls}" src="data/flags/${d.c2}.svg" alt="Flag of ${esc(d.n)}">` : ''; }
+
+// ---------- rules ----------
+const RULES = {
+  atlas:{title:'Atlas', goal:'See how big places really are, and learn facts about any country.', steps:[
+    'The red shape is the overlay. Type in the top box to pick a different country or US state.',
+    'The blue-outlined country underneath is the base. Change it in the second box.',
+    'Drag the red shape anywhere. Use Rotate and Zoom to line it up.',
+    'Both are drawn at the same scale, so what you see is their real size.',
+    'Tap any country on the map to see its flag, capital, languages and neighbors.']},
+  find:{title:'Find It', goal:'Find each country on the map.', steps:[
+    'We name a country. Tap it on the map.',
+    'Right on the first tap scores a point and turns it green.',
+    'A wrong tap tells you which country you hit. You get three tries.',
+    'After three misses we show you where it is (orange) and move on.',
+    'Ten countries per round. Tiny countries show as dots. Pinch or use + to zoom.']},
+  label:{title:'Label It', goal:'Put every name on the right country.', steps:[
+    'The highlighted (lighter) countries on the map are the ones to label.',
+    'Tap a name in the tray, then tap its country. You can also drag the name onto the map.',
+    'A correct name sticks to the map and turns the country green.',
+    'A wrong tap flashes red and counts as a miss.',
+    'Place all the names to finish the round.']},
+  shape:{title:'Shape', goal:'Name the mystery country from its outline.', steps:[
+    'The black shape is the mystery country. It is enlarged to fill the box, so size is no clue.',
+    'Type a guess. You get six.',
+    'Each wrong guess shows how far your guess is from the answer in km.',
+    'The arrow points from your guess toward the answer. ↑ means north, → means east.',
+    'The % is how close you are. 100% is right on. Higher is warmer.',
+    'Stuck? Tap Clue for the region, the size, or the first letter.']},
+  hot:{title:'Hot & Cold', goal:'Find the secret country by getting warmer.', steps:[
+    'There is a secret country. You can guess any country, as many times as you like.',
+    'Each guess is colored on the globe and listed with a temperature: Cold, Cool, Warm, Hot, or Touching.',
+    'Touching means your guess shares a border with the secret country. You are right next to it.',
+    'The km is the gap between the two countries, and the arrow points toward the secret one.',
+    'You start with one clue. Tap Another clue for more: size, coastline, neighbors, first letter, capital.',
+    'Drag to spin the globe. Fewer guesses is better.']},
+  chain:{title:'Border Chain', goal:'Connect the two blue countries over land.', steps:[
+    'Start in one blue country and reach the other, crossing land borders only.',
+    'Type countries that link them. Each one must touch the chain on the map.',
+    'Example: France to Poland works through Germany, because France touches Germany and Germany touches Poland.',
+    'Green means the country is on a shortest route. Orange means it connects, but the long way.',
+    'You win when your countries form an unbroken path. Guesses are limited, so plan ahead.',
+    'Hint fills in one link and costs a guess.']},
+  capitals:{title:'Capitals', goal:'Match countries with their capital cities.', steps:[
+    'Pick a direction at the top: Country → Capital, or Capital → Country.',
+    'Easy and Medium: tap one of four answers. Hard: type it, and small typos are fine.',
+    'The map shows where the country is, with country names on it.',
+    'A right answer moves on by itself. After a wrong one, read the answer and tap Next.',
+    'Ten per round. Countries you miss come back more often.']},
+  flags:{title:'Flags', goal:'Match flags and countries.', steps:[
+    'Pick a direction at the top: Flag → Country, or Country → Flag.',
+    'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
+    'After you answer, the map shows where that country is.',
+    'Ten per round. Flags you miss come back more often.']},
+  players:{title:'Players', goal:'Track who knows the most.', steps:[
+    'Each person gets their own player. Switch players at the top of the screen.',
+    'A place counts as known once you get it right at least twice, and more often than you miss it.',
+    'Green numbers lead each game. The star marks the overall leader.',
+    'Change the map at the top to compare a different region.']}
+};
+function showRules(mode){
+  const r = RULES[mode]; if (!r) return;
+  document.querySelector('.modal')?.remove();
+  const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.setAttribute('aria-label', 'How to play ' + r.title);
+  m.innerHTML = `<div class="sheet"><p class="lab">How to play</p><h2>${r.title}</h2><p class="goal">${r.goal}</p><ol>${r.steps.map(s => `<li>${s}</li>`).join('')}</ol><button type="button" class="btn primary" id="gotit">Got it, let's play</button></div>`;
+  document.body.appendChild(m);
+  const close = () => m.remove();
+  m.querySelector('#gotit').onclick = close; m.onclick = e => { if (e.target === m) close(); };
+  m.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  m.querySelector('#gotit').focus();
+}
+function maybeRules(mode){
+  const seen = store.get('aa-rules-seen:' + S.player, {});
+  if (!seen[mode] && RULES[mode]){ seen[mode] = 1; store.set('aa-rules-seen:' + S.player, seen); showRules(mode); }
+}
+// Clues shared by Shape and Hot & Cold
+function clues(d){
+  const big = US.slice().sort((x,y) => Math.abs(Math.log(d.garea/x.garea)) - Math.abs(Math.log(d.garea/y.garea)))[0];
+  const nb = (d.b || []).length;
+  const sizeClue = d.type === 'state' ? `About ${Math.round(d.garea / BY.get('TX').garea * 100)}% the size of Texas` : (big.id === d.id ? '' : `About the size of ${big.n} (a US state)`);
+  return (d.type === 'country' ? [
+    `It's in ${d.sr || d.r}`, sizeClue,
+    d.ll ? 'It is landlocked: no coastline' : 'It has a coastline',
+    nb ? `It borders ${nb} countr${nb === 1 ? 'y' : 'ies'}` : 'It borders no other country (island or isolated)',
+    `It starts with "${d.n[0]}"`, d.cap[0] ? `Its capital is ${d.cap[0]}` : ''
+  ] : [
+    sizeClue, nb ? `It borders ${nb} state${nb === 1 ? '' : 's'}` : 'It borders no other state',
+    `It starts with "${d.n[0]}"`, `Its capital is ${d.cap[0]}`
+  ]).filter(Boolean);
+}
 
 // ---------- map ----------
 function fc(fs){ return {type:'FeatureCollection', features:fs}; }
@@ -475,16 +586,22 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   const tiny = items.filter(d => active.has(d.id) && path.area(d.ft) < 45 && proj(d.cen));
   const dots = g.append('g').selectAll('circle').data(tiny, d => d.id).join('circle').attr('class','dot act')
     .attr('cx', d => proj(d.cen)[0]).attr('cy', d => proj(d.cen)[1]).attr('r', 7);
+  const nmG = g.append('g');
   const lab = g.append('g');
   let k = 1;
   // viewBox units per screen pixel, so labels and tap dots keep a readable size on small screens
   const px = () => W / Math.max(1, svg.node().getBoundingClientRect().width || W);
   const dotR = () => Math.max(7, 5.5 * px()) / Math.sqrt(k), fs = () => 14 * px() / k;
+  // Country names: shown only where the country is big enough on screen to hold its name
+  function updNames(){ const p = px(), f = 12 * p / k;
+    nmG.selectAll('text').attr('font-size', f).attr('stroke-width', f/4).attr('display', d => {
+      const b = path.bounds(d.ft), wpx = (b[1][0]-b[0][0]) * k / p, hpx = (b[1][1]-b[0][1]) * k / p;
+      return wpx > d.n.length * 6.5 && hpx > 12 ? null : 'none'; }); }
   dots.attr('r', dotR());
   if (onPick){ fp.on('click', (e,d) => onPick(d,e)); dots.on('click', (e,d) => onPick(d,e)); }
   const zb = d3.zoom().scaleExtent([1, 24]).translateExtent([[-W*.2,-H*.2],[W*1.2,H*1.2]]).on('zoom', e => {
     g.attr('transform', e.transform); k = e.transform.k;
-    dots.attr('r', dotR()); lab.selectAll('text').attr('font-size', fs()).attr('stroke-width', fs()/4);
+    dots.attr('r', dotR()); lab.selectAll('text').attr('font-size', fs()).attr('stroke-width', fs()/4); updNames();
   });
   svg.call(zb).on('dblclick.zoom', null);
   // On tall screens the whole world is a thin strip, so open zoomed in on the middle; pinch or reset to see it all.
@@ -508,6 +625,8 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
     label(d, text, cls=''){ const p = proj(d.cen); if (!p) return; lab.selectAll(`text[data-id="${d.id}"]`).remove();
       lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('font-size', fs()).attr('stroke-width', fs()/4).text(text); },
     clearLabels(){ lab.selectAll('*').remove(); },
+    names(list){ nmG.selectAll('text').data(list.filter(d => proj(d.cen)), d => d.id).join('text').attr('class','lbl nm')
+      .attr('x', d => proj(d.cen)[0]).attr('y', d => proj(d.cen)[1]).text(d => d.n); updNames(); },
     focus(list, maxK=8){
       const bs = list.map(d => path.bounds(d.ft)).filter(b => isFinite(b[0][0]));
       if (!bs.length) return;
@@ -635,15 +754,16 @@ function modeShape(){
   const MAXD = S.set === 'us' ? 4600 : 20015, MAXG = 6;
   panel.innerHTML = head('Shape', `Name the ${S.set === 'us' ? 'state' : 'country'} from its outline. Six guesses. Each miss tells you how far and which way.`, 'shape', P) +
     `<div class="sil"><svg viewBox="0 0 240 240" aria-label="Mystery outline"><path id="silp"></path></svg></div>
-     <div id="gin"></div><div class="rows" id="rows"></div>
-     <div class="row"><button class="btn" id="hint" type="button">Hint</button><button class="btn" id="give" type="button">Reveal</button><button class="btn" id="nxt" type="button" hidden>Next shape</button></div><div id="endh"></div>`;
+     <div id="gin"></div><ul class="clues" id="cluelist"></ul><div class="rows" id="rows"></div>
+     <p class="note">km = how far your guess is from the answer. The arrow points from your guess toward the answer. % = how close you are (100% is correct).</p>
+     <div class="row"><button class="btn" id="hint" type="button">Clue</button><button class="btn" id="give" type="button">Reveal</button><button class="btn primary" id="nxt" type="button" hidden>Next shape</button></div><div id="endh"></div>`;
   const sp = d3.geoAzimuthalEqualArea().rotate([-target.cen[0], -target.cen[1]]).fitExtent([[14,14],[226,226]], target.ft);
   $('#silp').setAttribute('d', d3.geoPath(sp)(target.ft));
   const map = makeMap(stage, {});
   const guesses = []; let done = false, hints = 0;
   const rows = $('#rows');
   function draw(){
-    rows.innerHTML = guesses.map(g => { const win = g.id === target.id; const d = d3.geoDistance(g.pt, target.pt)*R; const b = bearing(g.pt, target.pt); const p = Math.round(Math.max(0, 1 - d/MAXD)*100);
+    rows.innerHTML = '<div class="grow headrow"><span>Guess</span><span>Away</span><span>Way</span><span>Close</span></div>' + guesses.map(g => { const win = g.id === target.id; const d = d3.geoDistance(g.pt, target.pt)*R; const b = bearing(g.pt, target.pt); const p = Math.round(Math.max(0, 1 - d/MAXD)*100);
       return `<div class="grow${win ? ' win' : ''}"><span class="nm">${esc(g.n)}</span><span class="num">${win ? '0' : fmt(d)} km</span><span class="arrow" style="transform:rotate(${b}deg)" aria-label="direction">${win ? '★' : '↑'}</span><span class="num">${win ? 100 : p}%</span></div>`; }).join('') +
       Array(Math.max(0, MAXG - guesses.length)).fill('<div class="grow empty"></div>').join('');
   }
@@ -651,7 +771,8 @@ function modeShape(){
     if (done) return; guesses.push(g); const d = d3.geoDistance(g.pt, target.pt)*R;
     map.fill(g.id, g.id === target.id ? 'var(--good-fill)' : d3.interpolateRgb('#ffe066','#e03131')(Math.max(0, 1 - d/(MAXD*.35)))); map.label(g, g.n);
     draw(); if (g.id === target.id) end(true); else if (guesses.length >= MAXG) end(false); }});
-  $('#hint').onclick = () => { hints++; const h = hints === 1 ? (target.type === 'state' ? `Neighbors ${target.b.length} state${target.b.length===1?'':'s'}` : `Region: ${target.sr || target.r}`) : hints === 2 ? `Starts with ${target.n[0]}` : `Capital: ${target.cap[0] || 'none listed'}`; toast(h); if (hints >= 3) $('#hint').disabled = true; };
+  const CL = clues(target).filter(c => !c.startsWith('Its capital'));
+  $('#hint').onclick = () => { if (hints >= CL.length) return; $('#cluelist').insertAdjacentHTML('beforeend', `<li>${esc(CL[hints])}</li>`); hints++; if (hints >= CL.length) $('#hint').disabled = true; };
   $('#give').onclick = () => end(false);
   $('#nxt').onclick = () => route();
   function end(win){ done = true; gi.disable(true); rec('shape', target.id, win && guesses.length <= 3 && hints === 0);
@@ -704,26 +825,35 @@ function makeGlobe(host, {items, center=[0,20]}){
 function modeHot(){
   const P = pool(); const target = pickN('hot', P, 1)[0]; const U = universe(S.set); const isUS = S.set === 'us';
   const MAXH = isUS ? 1600 : 5000;
-  panel.innerHTML = head('Hot & Cold', `Find the mystery ${isUS ? 'state' : 'country'}. Each guess lights up: the hotter the color, the closer you are. Neighbors count as 0 km.`, 'hot', P) +
+  panel.innerHTML = head('Hot & Cold', `Find the secret ${isUS ? 'state' : 'country'}. Guess anything: each guess gets a temperature, a distance, and an arrow pointing toward the secret.`, 'hot', P) +
     `<div id="gin"></div><div class="stats"><span>Guesses <b id="gc">0</b></span><span>Closest <b id="cl">–</b></span></div>
-     <div class="rows" id="rows"></div><div class="row"><button class="btn" id="give" type="button">Reveal</button><button class="btn" id="nxt" type="button" hidden>New mystery</button></div><div id="endh"></div>`;
+     <ul class="clues" id="cluelist"></ul>
+     <div class="rows" id="rows"></div>
+     <div class="row"><button class="btn" id="clue" type="button">Another clue</button><button class="btn" id="give" type="button">Reveal</button><button class="btn primary" id="nxt" type="button" hidden>New secret</button></div><div id="endh"></div>`;
+  const CL = clues(target); let nc = 0;
+  const addClue = () => { if (nc >= CL.length) return; $('#cluelist').insertAdjacentHTML('beforeend', `<li>${esc(CL[nc++])}</li>`); if (nc >= CL.length) $('#clue').disabled = true; };
+  addClue();
+  $('#clue').onclick = addClue;
+  const sc = isUS ? .35 : 1;
+  const tempOf = km => km < 1 ? ['Touching!', '#c92a2a', '#fff'] : km < 600*sc ? ['Hot', '#f03e3e', '#fff'] : km < 1500*sc ? ['Warm', '#ff922b', '#1b1b1b'] : km < 3000*sc ? ['Cool', '#ffe066', '#1b1b1b'] : ['Cold', '#a5d8ff', '#1b1b1b'];
   const regionCenter = S.set === 'world' || isUS ? [10, 25] : [(BOX[S.set][0]+BOX[S.set][2])/2, (BOX[S.set][1]+BOX[S.set][3])/2];
   let map;
   const heat = t => d3.interpolateRgb('#fff3bf', '#c92a2a')(Math.pow(t, .8));
   const gs = []; let done = false;
   function draw(){ const sorted = gs.slice().sort((a,b) => a.km - b.km);
-    $('#rows').innerHTML = sorted.map(g => `<div class="grow${g.d.id === target.id ? ' win' : ''}"><span class="nm">${esc(g.d.n)}</span><span class="num">${g.d.id === target.id ? 'Found' : g.km < 1 ? 'Touching' : fmt(g.km) + ' km'}</span><span class="sw" style="background:${g.col}"></span><span></span></div>`).join('');
+    $('#rows').innerHTML = (sorted.length ? '<div class="grow headrow"><span>Guess (closest first)</span><span></span><span>Away</span><span>Way</span></div>' : '') + sorted.map(g => { const win = g.d.id === target.id, [w, bg, fg] = tempOf(g.km);
+      return `<div class="grow${win ? ' win' : ''}"><span class="nm">${esc(g.d.n)}</span><span class="temp" style="background:${win ? 'var(--good)' : bg};color:${win ? '#fff' : fg}">${win ? 'Found it!' : w}</span><span class="num">${win || g.km < 1 ? '0' : fmt(g.km)} km</span><span class="arrow" style="transform:rotate(${bearing(g.d.pt, target.pt)}deg)">${win ? '★' : '↑'}</span></div>`; }).join('');
     $('#gc').textContent = gs.length; const c = sorted.find(g => g.d.id !== target.id); $('#cl').textContent = c ? (c.km < 1 ? 'touching' : fmt(c.km) + ' km') : '–'; }
   const gi = makeGuess($('#gin'), {placeholder: isUS ? 'Type a state' : 'Type a country', items:() => U.filter(d => !gs.some(g => g.d === d)), onPick:d => {
     if (done) return; const km = gap(d, target); const win = d.id === target.id;
-    const col = win ? 'var(--good-fill)' : heat(1 - Math.min(km, MAXH)/MAXH);
+    const col = win ? 'var(--good-fill)' : tempOf(km)[1];
     gs.push({d, km, col}); map.fill(d.id, col); map.label(d, d.n); map.focus([d]); draw(); if (win) end(true); }});
   map = isUS ? makeMap(stage, {}) : makeGlobe(stage, {items:U, center:regionCenter});
   stage.insertAdjacentHTML('beforeend', `<div class="hint-line">${isUS ? 'Scroll or + to zoom.' : 'Drag to spin the globe.'}</div>`);
   $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
   function end(win){ done = true; gi.disable(true); rec('hot', target.id, win && gs.length <= 8);
     map.fill(target.id, win ? 'var(--good-fill)' : 'var(--hint-fill)'); map.label(target, target.n, win ? '' : 'miss'); map.focus([target], 4);
-    $('#give').hidden = true; $('#nxt').hidden = false;
+    $('#give').hidden = true; $('#clue').hidden = true; $('#nxt').hidden = false;
     $('#endh').innerHTML = `<div class="end"><div class="score">${win ? `${gs.length} guess${gs.length === 1 ? '' : 'es'}` : esc(target.n)}</div><p>${win ? `Found ${esc(target.n)}.` : 'That was the mystery.'}</p></div>`; }
   draw(); gi.input.focus({preventScroll:true});
 }
@@ -817,7 +947,7 @@ function dirToggle(key, opts){
 function modeCapitals(preset){
   const P = pool().filter(d => d.cap && d.cap.length); const items = preset || pickN('cap-' + S.capDir, P, Math.min(10, P.length));
   const fwd = S.capDir === 'c2cap', hard = S.diff === 'hard', U = universe(S.set);
-  const map = makeMap(stage, {});
+  const map = makeMap(stage, {}); map.names(U);
   quizRound({mode:'cap-' + S.capDir, title:'Capitals', P, items, redo:modeCapitals,
     how: fwd ? `Name the capital. ${hard ? 'Type it; small typos are fine.' : 'Pick one of four.'}` : `Which ${S.set === 'us' ? 'state' : 'country'} is this the capital of?`,
     askHTML: q => fwd ? `<div class="prompt"><small>Capital of</small><strong>${esc(q.n)}</strong></div>` : `<div class="prompt"><small>${S.set === 'us' ? 'State' : 'Country'} with the capital</small><strong>${esc(q.cap[0])}</strong></div>`,
@@ -841,7 +971,7 @@ function modeFlags(preset){
   }
   const P = pool(); const items = preset || pickN('flag-' + S.flagDir, P, Math.min(10, P.length));
   const fwd = S.flagDir === 'flag2c', hard = S.diff === 'hard';
-  const map = makeMap(stage, {});
+  const map = makeMap(stage, {}); map.names(C);
   quizRound({mode:'flag-' + S.flagDir, title:'Flags', P, items, redo:modeFlags,
     how: fwd ? (hard ? 'Type the country for this flag.' : 'Pick the country that flies this flag.') : 'Pick the right flag.',
     askHTML: q => fwd ? `<img class="bigflag" src="data/flags/${q.c2}.svg" alt="Mystery flag">` : `<div class="prompt"><small>Flag of</small><strong>${esc(q.n)}</strong></div>`,
