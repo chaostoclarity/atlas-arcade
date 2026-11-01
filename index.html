@@ -1,5 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--pwa-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b59c3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Atlas Arcade">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Geography games for the whole family: find countries, label maps, shapes, borders, capitals and flags.">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<!--/pwa-->
 <title>Atlas Arcade</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -259,6 +276,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .main[data-mode="label"] .tray{justify-content:center}
 }
 </style>
+</head>
+<body>
 
 <div class="app">
   <header class="top">
@@ -460,7 +479,7 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   let k = 1;
   // viewBox units per screen pixel, so labels and tap dots keep a readable size on small screens
   const px = () => W / Math.max(1, svg.node().getBoundingClientRect().width || W);
-  const dotR = () => Math.max(7, 7 * px()) / Math.sqrt(k), fs = () => 14 * px() / k;
+  const dotR = () => Math.max(7, 5.5 * px()) / Math.sqrt(k), fs = () => 14 * px() / k;
   dots.attr('r', dotR());
   if (onPick){ fp.on('click', (e,d) => onPick(d,e)); dots.on('click', (e,d) => onPick(d,e)); }
   const zb = d3.zoom().scaleExtent([1, 24]).translateExtent([[-W*.2,-H*.2],[W*1.2,H*1.2]]).on('zoom', e => {
@@ -946,3 +965,5 @@ Promise.all(['data/world.json','data/states.json'].map(u => fetch(u).then(r => {
   })
   .catch(err => { panel.innerHTML = `<p>Could not load the map data (${esc(err.message)}). Reload the page to try again.</p>`; });
 </script>
+</body>
+</html>
