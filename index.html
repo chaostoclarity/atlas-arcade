@@ -6,8 +6,8 @@
 /* Layout: classroom pull-down map turned arcade. Header + mode rail, then a control panel beside a big map stage (stacks on phones). */
 :root{
   --bg:#e8eef1; --panel:#ffffff; --ink:#13212b; --muted:#566874; --line:#cdd8de;
-  --water:#bcd9e6; --sphere:#c9e2ec; --land:#e6ecdc; --ctx:#d9ded3; --stroke:#8b9c88;
-  --act:#f4f7ec; --act-hover:#fff6c9;
+  --water:#8ec3da; --sphere:#a3cfe2; --land:#e6ecdc; --ctx:#d3d9cb; --stroke:#5d6f5a;
+  --act:#fbfcf3; --act-hover:#ffe98a;
   --accent:#2b59c3; --accent-ink:#ffffff; --accent-soft:#dfe7fb;
   --good:#2b8a3e; --good-fill:#8ce99a; --bad:#d6336c; --bad-fill:#ffa8c5; --hint:#e67700; --hint-fill:#ffd8a8;
   --halo:#ffffff;
@@ -17,15 +17,15 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e171d; --panel:#15222b; --ink:#e4edf1; --muted:#93a6b1; --line:#283a45;
-  --water:#0f2a37; --sphere:#123342; --land:#2d4038; --ctx:#22302b; --stroke:#5a7468;
-  --act:#36503f; --act-hover:#5b5a2c;
+  --water:#0b2230; --sphere:#0f2d3d; --land:#2d4038; --ctx:#26342e; --stroke:#7d9a8b;
+  --act:#3f5e49; --act-hover:#6b6a2a;
   --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
   --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
   --halo:#0e171d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e171d; --panel:#15222b; --ink:#e4edf1; --muted:#93a6b1; --line:#283a45;
-  --water:#0f2a37; --sphere:#123342; --land:#2d4038; --ctx:#22302b; --stroke:#5a7468;
-  --act:#36503f; --act-hover:#5b5a2c;
+  --water:#0b2230; --sphere:#0f2d3d; --land:#2d4038; --ctx:#26342e; --stroke:#7d9a8b;
+  --act:#3f5e49; --act-hover:#6b6a2a;
   --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
   --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
   --halo:#0e171d; color-scheme:dark}
@@ -87,7 +87,7 @@ svg.map{display:block;width:100%;height:100%;touch-action:none;user-select:none;
 .water{fill:var(--water)}
 .sphere{fill:var(--sphere);stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
 .grat{fill:none;stroke:var(--line);stroke-width:.5;vector-effect:non-scaling-stroke;opacity:.6}
-.f{fill:var(--ctx);stroke:var(--stroke);stroke-width:.6;vector-effect:non-scaling-stroke;transition:fill .2s}
+.f{fill:var(--ctx);stroke:var(--stroke);stroke-width:.85;vector-effect:non-scaling-stroke;transition:fill .2s}
 .f.act{fill:var(--act);cursor:pointer}
 .f.act:hover{fill:var(--act-hover)}
 .f.sel,.dot.sel{fill:var(--accent)}
@@ -170,7 +170,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #ov{cursor:grab}
 #ov.drag{cursor:grabbing}
 #ov path{fill:color-mix(in srgb,var(--bad) 32%,transparent);stroke:var(--bad);stroke-width:1.8;vector-effect:non-scaling-stroke}
-#ov text{font-family:var(--display);font-weight:800;font-size:16px;fill:var(--bad);text-anchor:middle;paint-order:stroke;stroke:var(--halo);stroke-width:4px;pointer-events:none}
+#ov text{font-family:var(--display);font-weight:800;fill:var(--bad);text-anchor:middle;paint-order:stroke;stroke:var(--halo);pointer-events:none}
 .note{font-size:12.5px;color:var(--muted);margin:0}
 .loading{padding:60px 20px;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -192,65 +192,71 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   select,.seg button{padding-block:5px}
   .hint-line{display:none}
 }
-/* Portrait (iPad upright, phones): stacked, with the map first where you tap it */
+/* ===== Portrait: phones and iPad upright ===== */
 @media (orientation:portrait),(max-width:639px){
-  .main{display:flex;flex-direction:column}
-  .main[data-mode="find"] .stage,.main[data-mode="label"] .stage,.main[data-mode="atlas"] .stage,.main[data-mode="players"] .stage{order:-1}
-  .main[data-mode="find"] .modehead,.main[data-mode="label"] .modehead,.main[data-mode="atlas"] .modehead{order:10}
-  .main[data-mode="find"] .panel .prompt{display:none}
-  .qbar{display:flex;align-items:baseline;gap:8px;position:absolute;left:8px;right:8px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.12);pointer-events:none}
-  .qbar small{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
-  .qbar b{font-family:var(--display);font-weight:800;font-size:clamp(20px,3.4vw,28px);line-height:1.1;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .qbar span{font-size:12.5px;color:var(--muted);white-space:nowrap}
-  .main[data-mode="find"] .toast{top:64px}
-  .stage{height:min(62vh,135vw)}
-  .main[data-mode="capitals"] .stage,.main[data-mode="flags"] .stage{height:min(40vh,90vw)}
+  body{font-size:17px}
+  .app{max-width:none;padding:0;gap:0}
+  .top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border-bottom:1px solid var(--line);padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .top .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .brand{min-width:0}.brand h1{font-size:22px;white-space:nowrap}.globe-mark{width:26px;height:26px}
+  .who select{height:46px;font-size:17px;font-weight:700;max-width:40vw}
+  .who input{height:46px;font-size:17px;width:40vw}
+  .pickers{grid-column:1/-1;display:flex;flex-wrap:nowrap;gap:8px}
+  .pickers select{flex:1;min-width:0;width:0;height:48px;font-size:17px}
+  .seg{border-radius:10px}.seg button{height:48px;padding:0 14px;font-size:16px}
+  .tabs{background:var(--panel);border-bottom:1px solid var(--line);gap:8px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{min-width:0;padding:11px 18px;border-radius:999px}.tab span{display:none}.tab b{font-size:17px;white-space:nowrap}
+  .main{display:flex;flex-direction:column;gap:0;align-items:stretch}
+  .panel{border:0;border-radius:0;gap:14px;padding-block:18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .panel h2{font-size:24px}.how{font-size:15.5px}
+  .stage{border:0;border-radius:0;height:min(64vh,120vw)}
+  .main[data-mode="capitals"] .stage,.main[data-mode="flags"] .stage{height:min(46vh,90vw)}
+  .main[data-mode="players"] .stage{order:-1;height:auto}
+  .btn{min-height:50px;font-size:17px;padding:10px 20px;border-radius:12px}
+  .choices{gap:10px}.choice{min-height:68px;font-size:19px;padding:14px;border-radius:14px}
+  .choice.flag img{max-width:100%}
+  .guess input{height:56px;font-size:19px;border-radius:12px;padding:0 16px}
+  .guess li{padding:12px 14px;font-size:17px}
+  .prompt{padding:14px 16px;border-radius:14px}.prompt small{font-size:12.5px}.prompt strong{font-size:32px}
+  .stats{font-size:15px;gap:18px}
+  .grow{padding:11px 14px;font-size:17px;border-radius:10px}.grow .num{font-size:15px}.grow .arrow{font-size:22px}
+  .tag{font-size:17px;padding:10px 14px;border-radius:12px}
+  .tray{gap:8px}
+  .chip{font-size:16px;padding:7px 14px}
+  .chainhead{font-size:22px}
+  .end .score{font-size:40px}.end{padding:18px;border-radius:14px}
+  .zoomctl{right:max(12px,env(safe-area-inset-right,0px));bottom:12px;gap:8px}
+  .zoomctl button{width:50px;height:50px;font-size:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .hint-line,.qbar{display:none}
+  .toast{top:12px;font-size:16px;padding:9px 18px}
+  .bigflag{max-width:100%}
+  .sil svg{max-width:260px}
+  .board th,.board td{padding:10px 12px;font-size:15px}
+  .ctl{grid-template-columns:70px minmax(0,1fr) 56px;font-size:15px}
+  input[type=range]{height:32px}
+
+  /* Map modes become a full-screen app: the map fills the screen and controls sit in a bottom sheet */
+  .app[data-shell="sheet"]{height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column}
+  .app[data-shell="sheet"] .main{flex:1 1 auto;min-height:0}
+  .app[data-shell="sheet"] .top,.app[data-shell="sheet"] .tabs{flex:none}
+  .app[data-shell="sheet"] .stage{order:-1;flex:1 1 auto;height:auto;min-height:200px}
+  .app[data-shell="sheet"] .panel{flex:0 1 auto;max-height:48%;overflow-y:auto;overscroll-behavior:contain;position:relative;z-index:3;margin-top:-16px;border-radius:18px 18px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.14);padding-block:16px max(16px,env(safe-area-inset-bottom,0px));gap:12px}
+  .app[data-shell="sheet"] .panel::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 2px}
+  .app[data-shell="sheet"] .modehead{display:none}
+  .app[data-shell="sheet"] .zoomctl{bottom:28px}
+  .main[data-mode="find"] .panel{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+  .main[data-mode="find"] .panel > *{grid-column:1/-1}
+  .main[data-mode="find"] .panel .prompt{grid-column:1/-1}
+  .main[data-mode="find"] .panel .stats{grid-column:1}
+  .main[data-mode="find"] .panel .row{grid-column:2}
+  .main[data-mode="label"] .panel .note{display:none}
+  .main[data-mode="label"] .panel{max-height:42%}
 }
-/* iPad upright: two-column answer grids get room to breathe */
 @media (orientation:portrait) and (min-width:700px){
   .choices{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .app[data-shell="sheet"] .panel{max-height:40%}
   .main[data-mode="label"] .tray{justify-content:center}
-}
-@media (max-width:700px){
-  body{font-size:15px}
-  .app{padding-block:10px 24px;gap:10px}
-  .top{gap:8px}
-  .brand h1{font-size:22px}
-  .globe-mark{width:24px;height:24px}
-  .top .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .who{margin-left:auto}
-  .who select{max-width:42vw}
-  .pickers{width:100%;flex-wrap:nowrap}
-  .pickers select{flex:1;min-width:0;width:0}
-  .top{flex-wrap:wrap}.brand{min-width:0}
-  .main,.panel,.stage{min-width:0;max-width:100%}
-  .seg button{padding:8px 10px}
-  .tabs{margin-inline:calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding-inline:max(16px, env(safe-area-inset-left,0px));gap:6px}
-  .tab{min-width:0;padding:8px 12px}
-  .tab span{display:none}
-  .tab b{font-size:14px;white-space:nowrap}
-  .panel{padding:14px;gap:12px;border-radius:10px}
-  .panel h2{font-size:20px}
-  .how{font-size:13.5px}
-  .stage{border-radius:10px}
-  .zoomctl button{width:40px;height:40px}
-  .hint-line{display:none}
-  .choices{gap:6px}
-  .choice{padding:12px 10px;font-size:15px}
-  .grow{grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;padding:8px}
-  .guess input,.who input,select{font-size:16px}
-  .tag{padding:9px 12px;font-size:15px}
-  .end .score{font-size:28px}
-  .board th,.board td{padding:7px 8px}
-  .sil svg{max-width:200px}
-  .bigflag{max-width:220px}
-}
-
-/* Portrait map height follows the region's shape: wide maps get a shorter box, tall regions a taller one */
-@media (orientation:portrait),(max-width:639px){
-  .main[data-set="world"] .stage,.main[data-set="us"] .stage,.main[data-mode="atlas"] .stage{height:min(56vh,72vw)}
-  .main[data-mode="hot"] .stage{height:min(62vh,96vw)}
-  .main[data-mode="capitals"] .stage,.main[data-mode="flags"] .stage{height:min(40vh,62vw)}
 }
 </style>
 
@@ -404,6 +410,7 @@ function route(){
   $('#set').disabled = false;
   document.querySelector('.main').dataset.mode = mode;
   document.querySelector('.main').dataset.set = S.set;
+  document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain'].includes(mode) ? 'sheet' : '';
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
@@ -428,12 +435,13 @@ function boxGeo(b){ const mx = (b[0]+b[2])/2; return {type:'MultiPoint', coordin
 function projFor(set, fitItems){
   const ext = [[16,16],[W-16,H-16]];
   if (set === 'us') return d3.geoAlbersUsa().fitExtent(ext, fc((fitItems || US).map(d => d.f)));
-  if (!fitItems && set === 'world') return d3.geoNaturalEarth1().fitExtent([[8,8],[W-8,H-8]], {type:'Sphere'});
+  if (!fitItems && set === 'world') return d3.geoNaturalEarth1().fitExtent([[8,8],[W-8,H-8]], boxGeo([-169,-57,180,83]));
   const geo = fitItems ? fc(fitItems.map(d => d.ft)) : boxGeo(BOX[set]);
   const cx = fitItems ? d3.geoCentroid(geo)[0] : (BOX[set][0]+BOX[set][2])/2;
   return d3.geoNaturalEarth1().rotate([-cx, 0]).fitExtent(ext, geo);
 }
 function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=null, onPick=null}){
+  fitH();
   const svg = d3.select(host).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('role','img').attr('aria-label',`Map of ${SETS[set]}`);
   const proj = projFor(set, fit), path = d3.geoPath(proj);
   svg.append('rect').attr('class','water').attr('width',W).attr('height',H);
@@ -450,18 +458,26 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
     .attr('cx', d => proj(d.cen)[0]).attr('cy', d => proj(d.cen)[1]).attr('r', 7);
   const lab = g.append('g');
   let k = 1;
+  // viewBox units per screen pixel, so labels and tap dots keep a readable size on small screens
+  const px = () => W / Math.max(1, svg.node().getBoundingClientRect().width || W);
+  const dotR = () => Math.max(7, 7 * px()) / Math.sqrt(k), fs = () => 14 * px() / k;
+  dots.attr('r', dotR());
   if (onPick){ fp.on('click', (e,d) => onPick(d,e)); dots.on('click', (e,d) => onPick(d,e)); }
   const zb = d3.zoom().scaleExtent([1, 24]).translateExtent([[-W*.2,-H*.2],[W*1.2,H*1.2]]).on('zoom', e => {
     g.attr('transform', e.transform); k = e.transform.k;
-    dots.attr('r', 7/Math.sqrt(k)); lab.selectAll('text').attr('font-size', 13/k).attr('stroke-width', 3.5/k);
+    dots.attr('r', dotR()); lab.selectAll('text').attr('font-size', fs()).attr('stroke-width', fs()/4);
   });
   svg.call(zb).on('dblclick.zoom', null);
+  // On tall screens the whole world is a thin strip, so open zoomed in on the middle; pinch or reset to see it all.
+  let home = d3.zoomIdentity;
+  if (set === 'world' && !fit && H/W > .7){ const k = Math.min(2.1, (H/W)/.52), c = proj([18, 22]); home = d3.zoomIdentity.translate(W/2, H/2).scale(k).translate(-c[0], -c[1]); svg.call(zb.transform, home); }
   const zc = document.createElement('div'); zc.className = 'zoomctl';
   zc.innerHTML = '<button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Reset zoom" style="font-size:13px">⤢</button>';
   const [zi, zo, zr] = zc.querySelectorAll('button');
   zi.onclick = () => svg.transition().duration(300).call(zb.scaleBy, 1.8);
   zo.onclick = () => svg.transition().duration(300).call(zb.scaleBy, 1/1.8);
   zr.onclick = () => svg.transition().duration(400).call(zb.transform, d3.zoomIdentity);
+  zr.title = 'Show the whole map';
   host.appendChild(zc);
   const sel = id => [fp.filter(d => d.id === id), dots.filter(d => d.id === id)];
   return {
@@ -471,7 +487,7 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
     fill(id, col){ sel(id).forEach(s => s.style('fill', col)); },
     flash(id, c='bad'){ sel(id).forEach(s => { s.classed(c, true); setTimeout(() => s.classed(c, false), 650); }); },
     label(d, text, cls=''){ const p = proj(d.cen); if (!p) return; lab.selectAll(`text[data-id="${d.id}"]`).remove();
-      lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('font-size', 13/k).attr('stroke-width', 3.5/k).text(text); },
+      lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('font-size', fs()).attr('stroke-width', fs()/4).text(text); },
     clearLabels(){ lab.selectAll('*').remove(); },
     focus(list, maxK=8){
       const bs = list.map(d => path.bounds(d.ft)).filter(b => isFinite(b[0][0]));
@@ -480,7 +496,7 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
       const kk = Math.max(1, Math.min(maxK, .55 / Math.max((x1-x0+20)/W, (y1-y0+20)/H)));
       svg.transition().duration(700).call(zb.transform, d3.zoomIdentity.translate(W/2, H/2).scale(kk).translate(-(x0+x1)/2, -(y0+y1)/2));
     },
-    reset(){ svg.transition().duration(500).call(zb.transform, d3.zoomIdentity); }
+    reset(){ svg.transition().duration(500).call(zb.transform, home); }
   };
 }
 
@@ -563,11 +579,11 @@ function modeLabel(preset){
      <p class="note">${hard ? 'Hard: every country in the region is highlighted.' : 'Highlighted countries are the ones to label.'}</p><div id="endh"></div>`;
   const tm = timer($('#tm'));
   const act = new Set((hard ? P : items).map(d => d.id));
-  const map = makeMap(stage, {active:act, onPick:(d) => { if (selected) check(selected, d); else toast('Pick a name first'); }, fit: S.set === 'world' && !hard ? null : null});
-  if (S.set === 'world') map.focus(items, 2.2);
   let selected = null, placed = 0, missCount = 0; const missed = new Set();
   const tray = $('#tray');
   shuffle(items).forEach(d => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tag'; b.textContent = d.n; b._d = d; b.setAttribute('aria-pressed','false'); tray.appendChild(b); });
+  const map = makeMap(stage, {active:act, onPick:(d) => { if (selected) check(selected, d); else toast('Tap a name first'); }});
+  if (S.set === 'world' && H/W <= .7) map.focus(items, 2.2);
   function setSel(b){ tray.querySelectorAll('.tag').forEach(t => t.setAttribute('aria-pressed', t === b)); selected = b ? b._d : null; }
   function check(item, d){
     if (d.id === item.id){
@@ -634,17 +650,19 @@ function samples(d){ if (SAMPLES.has(d.id)) return SAMPLES.get(d.id); const pts 
 function gap(a, b){ if (a.id === b.id) return 0; if (a.b?.includes(b.id) || b.b?.includes(a.id)) return 0;
   const A = samples(a), B = samples(b); let m = Infinity; for (const p of A) for (const q of B){ const d = d3.geoDistance(p,q); if (d < m) m = d; } return m * R; }
 function makeGlobe(host, {items, center=[0,20]}){
+  fitH();
   const svg = d3.select(host).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('aria-label','Globe');
   const proj = d3.geoOrthographic().fitExtent([[20,20],[W-20,H-20]], {type:'Sphere'}).rotate([-center[0], -center[1]]).clipAngle(90);
   const s0 = proj.scale(); const path = d3.geoPath(proj);
-  svg.append('rect').attr('class','water').attr('width',W).attr('height',H).style('fill','var(--bg)');
+  svg.append('rect').attr('class','water').attr('width',W).attr('height',H);
   const sph = svg.append('path').attr('class','sphere').datum({type:'Sphere'});
   const grat = svg.append('path').attr('class','grat').datum(d3.geoGraticule10());
   const fp = svg.append('g').selectAll('path').data(items, d => d.id).join('path').attr('class','f');
   const lab = svg.append('g'); const labels = new Map();
   function redraw(){ sph.attr('d', path); grat.attr('d', path); fp.attr('d', d => path(d.f));
     const r = proj.rotate(), c = [-r[0], -r[1]];
-    lab.selectAll('text').data([...labels.values()], d => d.d.id).join('text').attr('class', d => 'lbl ' + d.cls).attr('font-size', 13).attr('stroke-width', 3.5)
+    const gpx = W / Math.max(1, svg.node().getBoundingClientRect().width || W);
+    lab.selectAll('text').data([...labels.values()], d => d.d.id).join('text').attr('class', d => 'lbl ' + d.cls).attr('font-size', 14*gpx).attr('stroke-width', 3.5*gpx)
       .attr('display', d => d3.geoDistance(d.d.cen, c) < Math.PI/2 - .05 ? null : 'none')
       .attr('x', d => proj(d.d.cen)[0]).attr('y', d => proj(d.d.cen)[1]).text(d => d.t); }
   svg.call(d3.drag().on('drag', e => { const r = proj.rotate(), k = 70/proj.scale(); proj.rotate([r[0] + e.dx*k, Math.max(-85, Math.min(85, r[1] - e.dy*k))]); redraw(); }));
@@ -671,8 +689,7 @@ function modeHot(){
     `<div id="gin"></div><div class="stats"><span>Guesses <b id="gc">0</b></span><span>Closest <b id="cl">–</b></span></div>
      <div class="rows" id="rows"></div><div class="row"><button class="btn" id="give" type="button">Reveal</button><button class="btn" id="nxt" type="button" hidden>New mystery</button></div><div id="endh"></div>`;
   const regionCenter = S.set === 'world' || isUS ? [10, 25] : [(BOX[S.set][0]+BOX[S.set][2])/2, (BOX[S.set][1]+BOX[S.set][3])/2];
-  const map = isUS ? makeMap(stage, {}) : makeGlobe(stage, {items:U, center:regionCenter});
-  stage.insertAdjacentHTML('beforeend', `<div class="hint-line">${isUS ? 'Scroll or + to zoom.' : 'Drag to spin the globe.'}</div>`);
+  let map;
   const heat = t => d3.interpolateRgb('#fff3bf', '#c92a2a')(Math.pow(t, .8));
   const gs = []; let done = false;
   function draw(){ const sorted = gs.slice().sort((a,b) => a.km - b.km);
@@ -682,6 +699,8 @@ function modeHot(){
     if (done) return; const km = gap(d, target); const win = d.id === target.id;
     const col = win ? 'var(--good-fill)' : heat(1 - Math.min(km, MAXH)/MAXH);
     gs.push({d, km, col}); map.fill(d.id, col); map.label(d, d.n); map.focus([d]); draw(); if (win) end(true); }});
+  map = isUS ? makeMap(stage, {}) : makeGlobe(stage, {items:U, center:regionCenter});
+  stage.insertAdjacentHTML('beforeend', `<div class="hint-line">${isUS ? 'Scroll or + to zoom.' : 'Drag to spin the globe.'}</div>`);
   $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
   function end(win){ done = true; gi.disable(true); rec('hot', target.id, win && gs.length <= 8);
     map.fill(target.id, win ? 'var(--good-fill)' : 'var(--hint-fill)'); map.label(target, target.n, win ? '' : 'miss'); map.focus([target], 4);
@@ -707,9 +726,7 @@ function modeChain(){
      <div id="gin"></div><div class="stats"><span>Guesses <b id="gc">0</b>/${MAXG}</span><span>Best <b>${D-1}</b></span></div>
      <div class="chips" id="gl"></div><p class="note">Green is on a shortest route. Orange still borders things but takes the long way.</p>
      <div class="row"><button class="btn" id="hint" type="button">Hint (costs a guess)</button><button class="btn" id="give" type="button">Show route</button><button class="btn" id="nxt" type="button" hidden>New chain</button></div><div id="endh"></div>`;
-  const map = makeMap(stage, {fit:path0, onPick: tapOK ? (d => guess(d)) : null, active: tapOK ? new Set(U.map(d => d.id)) : new Set()});
-  map.cls(A.id, 'endpt'); map.cls(B.id, 'endpt'); map.label(A, A.n, 'end'); map.label(B, B.n, 'end');
-  const guessed = []; let done = false, used = 0;
+  const guessed = []; let done = false, used = 0; let map;
   function onPath(d){ return dA.get(d.id) + dB.get(d.id) === D; }
   function linked(){ const ids = new Set([A.id, B.id, ...guessed.map(d => d.id)]); return bfs(A, ids).has(B.id); }
   function draw(){ $('#gc').textContent = used; $('#gl').innerHTML = guessed.map(d => `<span class="chip ${onPath(d) ? 'on' : 'off'}${d._h ? ' hintc' : ''}">${esc(d.n)}</span>`).join(''); }
@@ -720,6 +737,8 @@ function modeChain(){
     if (linked()) end(true); else if (used >= MAXG) end(false);
   }
   const gi = makeGuess($('#gin'), {placeholder: S.set === 'us' ? 'Type a state' : 'Type a country', items:() => U.filter(d => !guessed.includes(d) && d !== A && d !== B), onPick:d => guess(d)});
+  map = makeMap(stage, {fit:path0, onPick: tapOK ? (d => guess(d)) : null, active: tapOK ? new Set(U.map(d => d.id)) : new Set()});
+  map.cls(A.id, 'endpt'); map.cls(B.id, 'endpt'); map.label(A, A.n, 'end'); map.label(B, B.n, 'end');
   $('#hint').onclick = () => { const n = path0.slice(1,-1).find(d => !guessed.includes(d)) || U.find(d => onPath(d) && !guessed.includes(d) && d !== A && d !== B); if (n) guess(n, true); };
   $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
   function end(win){ done = true; gi.disable(true); rec('chain', A.id, win && used <= D+1);
@@ -844,6 +863,7 @@ function modeAtlas(){
   makeGuess($('#gov'), {placeholder:'Overlay: ' + BY.get(A.ov).n, items:overlayItems, sub:d => d.type === 'state' ? 'US state' : '', onPick:d => { A.ov = d.id; A.x = W/2; A.y = H/2; A.rot = 0; save(); fitZoom(); drawAll(); setPH(); }});
   makeGuess($('#gbase'), {placeholder:'Base: ' + BY.get(A.base).n, items:() => C, onPick:d => { A.base = d.id; A.x = W/2; A.y = H/2; save(); fitZoom(); drawAll(); setPH(); }});
   function setPH(){ $('#gov input').placeholder = 'Overlay: ' + BY.get(A.ov).n; $('#gbase input').placeholder = 'Base: ' + BY.get(A.base).n; }
+  fitH();
   const svg = d3.select(stage).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('aria-label','True size comparison map');
   svg.append('rect').attr('class','water').attr('width',W).attr('height',H).style('fill','var(--bg)');
   const gSph = svg.append('path').attr('class','sphere'), gGrat = svg.append('path').attr('class','grat');
@@ -863,7 +883,8 @@ function modeAtlas(){
       .on('click', (e,d) => { A.info = d.id; save(); showInfo(); drawAll(); });
     gS.selectAll('path').data(A.base === 'USA' ? US : [], d => d.id).join('path').attr('class','stl').attr('d', d => path(d.f));
     const o = BY.get(A.ov); const op = d3.geoAzimuthalEqualArea().rotate([-o.cen[0], -o.cen[1]]).scale(p.scale()).translate([0,0]).clipAngle(90);
-    const opath = d3.geoPath(op); ovp.attr('d', opath(o.ft)); const bb = opath.bounds(o.ft); ovt.text(o.n).attr('x', 0).attr('y', Math.min(bb[0][1] - 10, -12));
+    const opath = d3.geoPath(op); ovp.attr('d', opath(o.ft)); const bb = opath.bounds(o.ft); const apx = W / Math.max(1, svg.node().getBoundingClientRect().width || W);
+    ovt.text(o.n).attr('x', 0).attr('y', Math.min(bb[0][1] - 10*apx, -12)).attr('font-size', 17*apx).attr('stroke-width', 4*apx);
     place(); verdict();
     $('#rot').value = A.rot; $('#rotv').textContent = A.rot + '°'; $('#zm').value = Math.round(A.zoom*100); $('#zmv').textContent = Math.round(A.zoom*100) + '%';
   }
