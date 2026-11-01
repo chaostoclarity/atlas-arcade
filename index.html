@@ -57,6 +57,52 @@ select{padding:7px 30px 7px 10px;border:1px solid var(--line);border-radius:8px;
 .board tr.me td{background:var(--accent-soft)}
 .board td.lead{color:var(--good);font-weight:600}
 .scroll{overflow-x:auto}
+.qbar{display:none}
+.modehead{display:grid;gap:10px}
+@media (max-width:900px){
+  .main{display:flex;flex-direction:column}
+  .main[data-mode="find"] .stage,.main[data-mode="label"] .stage,.main[data-mode="atlas"] .stage{order:-1}
+  .main[data-mode="find"] .modehead,.main[data-mode="label"] .modehead,.main[data-mode="atlas"] .modehead{order:10}
+  .main[data-mode="find"] .panel .prompt{display:none}
+  .main[data-mode="players"] .stage{order:-1}
+}
+@media (max-width:700px){
+  body{font-size:15px}
+  .app{padding-block:10px 24px;gap:10px}
+  .top{gap:8px}
+  .brand h1{font-size:22px}
+  .globe-mark{width:24px;height:24px}
+  .top .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .who{margin-left:auto}
+  .who select{max-width:42vw}
+  .pickers{width:100%;flex-wrap:nowrap}
+  .pickers select{flex:1;min-width:0}
+  .seg button{padding:8px 10px}
+  .tabs{margin-inline:calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding-inline:max(16px, env(safe-area-inset-left,0px));gap:6px}
+  .tab{min-width:0;padding:8px 12px}
+  .tab span{display:none}
+  .tab b{font-size:14px;white-space:nowrap}
+  .panel{padding:14px;gap:12px;border-radius:10px}
+  .panel h2{font-size:20px}
+  .how{font-size:13.5px}
+  .stage{border-radius:10px}
+  .zoomctl button{width:40px;height:40px}
+  .hint-line{display:none}
+  .qbar{display:flex;align-items:baseline;gap:8px;position:absolute;left:8px;right:8px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.12);pointer-events:none}
+  .qbar small{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+  .qbar b{font-family:var(--display);font-weight:800;font-size:20px;line-height:1.1;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .qbar span{font-size:12.5px;color:var(--muted);white-space:nowrap}
+  .main[data-mode="find"] .toast{top:60px}
+  .choices{gap:6px}
+  .choice{padding:12px 10px;font-size:15px}
+  .grow{grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;padding:8px}
+  .guess input,.who input,select{font-size:16px}
+  .tag{padding:9px 12px;font-size:15px}
+  .end .score{font-size:28px}
+  .board th,.board td{padding:7px 8px}
+  .sil svg{max-width:200px}
+  .bigflag{max-width:220px}
+}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
 .tab{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:0;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px 8px;min-width:104px}
 .tab b{font-family:var(--display);font-weight:600;font-size:15px}
@@ -199,7 +245,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
-const R = 6371.0088, KM2MI = 0.386102, W = 960, H = 600;
+const R = 6371.0088, KM2MI = 0.386102, W = 960;
+const MQ = window.matchMedia('(max-width: 700px)');
+let H = MQ.matches ? 800 : 600;
 const MODES = [
   {id:'atlas', name:'Atlas', sub:'True size + facts'},
   {id:'find', name:'Find It', sub:'Tap the country'},
@@ -294,6 +342,7 @@ function shell(){
   $('#diff').onclick = e => { const d = e.target.dataset.d; if (!d) return; S.diff = d; saveS(); route(); };
   $('#tabs').innerHTML = MODES.map(m => `<a class="tab" href="#${m.id}" data-m="${m.id}"><b>${m.name}</b><span>${m.sub}</span></a>`).join('');
   window.addEventListener('hashchange', route);
+  MQ.addEventListener?.('change', () => { H = MQ.matches ? 800 : 600; if (C.length) route(); });
   renderPlayers();
 }
 function renderPlayers(adding=false){
@@ -316,14 +365,15 @@ function route(){
   $('#set').value = S.set;
   $('#pickers').classList.toggle('off', mode === 'atlas');
   $('#set').disabled = false;
+  document.querySelector('.main').dataset.mode = mode;
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   cleanup = ({atlas:modeAtlas, players:modePlayers, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
-  return `<div><h2>${title}</h2><p class="how">${how}</p></div>` +
-    (k !== null ? `<div class="meter"><span>You know <b class="num">${k}</b> of <span class="num">${items.length}</span> in ${SETS[S.set]}</span><div class="bar"><i style="width:${items.length ? k/items.length*100 : 0}%"></i></div></div>` : '');
+  return `<div class="modehead"><div><h2>${title}</h2><p class="how">${how}</p></div>` +
+    (k !== null ? `<div class="meter"><span>You know <b class="num">${k}</b> of <span class="num">${items.length}</span> in ${SETS[S.set]}</span><div class="bar"><i style="width:${items.length ? k/items.length*100 : 0}%"></i></div></div>` : '') + '</div>';
 }
 let toastT;
 function toast(msg, kind=''){
@@ -445,8 +495,9 @@ function modeFind(preset){
      <div class="row"><button class="btn" id="skip" type="button">Show me</button></div><div id="endh"></div>`;
   let i = 0, tries = 0, right = 0, busy = false; const misses = []; const tm = timer($('#tm'));
   const map = makeMap(stage, {active:new Set(P.map(d => d.id)), onPick:pick});
-  stage.insertAdjacentHTML('beforeend', '<div class="hint-line">Pinch, scroll or use + to zoom. Dots mark tiny countries.</div>');
-  function ask(){ if (i >= items.length) return finish(); tries = 0; $('#q').textContent = items[i].n; $('#qi').textContent = i+1; }
+  stage.insertAdjacentHTML('beforeend', '<div class="hint-line">Pinch, scroll or use + to zoom. Dots mark tiny countries.</div><div class="qbar"><small>Find</small><b id="q2"></b><span class="num" id="qs2"></span></div>');
+  function ask(){ const done = i >= items.length; $('#q2').textContent = done ? 'Done' : items[i].n; $('#qs2').textContent = `${Math.min(i+1, items.length)}/${items.length} · ${right} right`;
+    if (done) return finish(); tries = 0; $('#q').textContent = items[i].n; $('#qi').textContent = i+1; }
   function reveal(){ const q = items[i]; busy = true; misses.push(q); rec('find', q.id, false);
     map.cls(q.id, 'reveal'); map.label(q, q.n, 'miss'); map.focus([q], 5);
     setTimeout(() => { map.cls(q.id,'reveal',false); map.cls(q.id,'meh'); map.reset(); busy = false; i++; ask(); }, 1700); }
