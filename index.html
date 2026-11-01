@@ -1,0 +1,837 @@
+<title>Atlas Arcade</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: classroom pull-down map turned arcade. Header + mode rail, then a control panel beside a big map stage (stacks on phones). */
+:root{
+  --bg:#e8eef1; --panel:#ffffff; --ink:#13212b; --muted:#566874; --line:#cdd8de;
+  --water:#bcd9e6; --sphere:#c9e2ec; --land:#e6ecdc; --ctx:#d9ded3; --stroke:#8b9c88;
+  --act:#f4f7ec; --act-hover:#fff6c9;
+  --accent:#2b59c3; --accent-ink:#ffffff; --accent-soft:#dfe7fb;
+  --good:#2b8a3e; --good-fill:#8ce99a; --bad:#d6336c; --bad-fill:#ffa8c5; --hint:#e67700; --hint-fill:#ffd8a8;
+  --halo:#ffffff;
+  --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e171d; --panel:#15222b; --ink:#e4edf1; --muted:#93a6b1; --line:#283a45;
+  --water:#0f2a37; --sphere:#123342; --land:#2d4038; --ctx:#22302b; --stroke:#5a7468;
+  --act:#36503f; --act-hover:#5b5a2c;
+  --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
+  --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
+  --halo:#0e171d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171d; --panel:#15222b; --ink:#e4edf1; --muted:#93a6b1; --line:#283a45;
+  --water:#0f2a37; --sphere:#123342; --land:#2d4038; --ctx:#22302b; --stroke:#5a7468;
+  --act:#36503f; --act-hover:#5b5a2c;
+  --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
+  --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
+  --halo:#0e171d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:1320px;margin:0 auto;padding-block:16px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:12px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:var(--display);font-weight:800;font-size:clamp(24px,3.4vw,32px);margin:0;letter-spacing:-.02em;line-height:1}
+.brand h1 em{font-style:normal;color:var(--accent)}
+.globe-mark{width:30px;height:30px;flex:none}
+.pickers{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pickers.off{display:none}
+select{padding:7px 30px 7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:7px 12px;cursor:pointer;font-size:14px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.who{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.who select{font-weight:700}
+.who input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);width:150px}
+.board{width:100%;border-collapse:collapse;font-size:14px}
+.board th,.board td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.board th:first-child,.board td:first-child{text-align:left}
+.board th{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.board td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.board td:first-child{font-family:var(--body);font-weight:700}
+.board tr.me td{background:var(--accent-soft)}
+.board td.lead{color:var(--good);font-weight:600}
+.scroll{overflow-x:auto}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.tab{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:0;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px 8px;min-width:104px}
+.tab b{font-family:var(--display);font-weight:600;font-size:15px}
+.tab span{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab[aria-current="page"] span{color:var(--accent-ink);opacity:.8}
+.main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;line-height:1.1}
+.how{margin:2px 0 0;color:var(--muted);font-size:14px}
+.meter{display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+.meter .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--good)}
+.prompt{background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.prompt small{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.prompt strong{font-family:var(--display);font-weight:800;font-size:clamp(22px,3vw,30px);line-height:1.1;text-wrap:balance}
+.stats{display:flex;gap:16px;font-family:var(--mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.stats b{color:var(--ink);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 13px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{position:relative;background:var(--water);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+svg.map{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.water{fill:var(--water)}
+.sphere{fill:var(--sphere);stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.grat{fill:none;stroke:var(--line);stroke-width:.5;vector-effect:non-scaling-stroke;opacity:.6}
+.f{fill:var(--ctx);stroke:var(--stroke);stroke-width:.6;vector-effect:non-scaling-stroke;transition:fill .2s}
+.f.act{fill:var(--act);cursor:pointer}
+.f.act:hover{fill:var(--act-hover)}
+.f.sel,.dot.sel{fill:var(--accent)}
+.f.ok,.dot.ok{fill:var(--good-fill)}
+.f.meh,.dot.meh{fill:var(--hint-fill)}
+.f.bad,.dot.bad{fill:var(--bad-fill)}
+.f.reveal,.dot.reveal{fill:var(--hint-fill);stroke:var(--hint);stroke-width:2}
+.f.base{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.f.endpt,.dot.endpt{fill:var(--accent);stroke:var(--accent)}
+.stl{fill:none;stroke:var(--stroke);stroke-width:.5;vector-effect:non-scaling-stroke;pointer-events:none;opacity:.8}
+.dot{fill:var(--act);stroke:var(--stroke);stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer}
+.lbl{font-family:var(--body);font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:var(--halo);stroke-linejoin:round;pointer-events:none}
+.lbl.end{fill:var(--accent)}
+.lbl.miss{fill:var(--hint)}
+.toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.15);pointer-events:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.toast.bad{border-color:var(--bad);color:var(--bad)}
+.toast.good{border-color:var(--good);color:var(--good)}
+.zoomctl{position:absolute;right:max(10px,env(safe-area-inset-right,0px));bottom:10px;display:flex;flex-direction:column;gap:4px}
+.zoomctl button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:18px;line-height:1}
+.hint-line{position:absolute;left:10px;bottom:10px;font-size:12px;color:var(--muted);background:var(--panel);padding:3px 8px;border-radius:6px;opacity:.92;pointer-events:none}
+/* guess input */
+.guess{position:relative}
+.guess input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.guess ul{position:absolute;z-index:20;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;max-height:260px;overflow:auto;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.guess li{padding:7px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.guess li small{color:var(--muted)}
+.guess li[aria-selected="true"],.guess li:hover{background:var(--accent-soft)}
+/* choices */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:11px 10px;cursor:pointer;font-weight:600;text-align:left;min-height:48px}
+.choice:hover{border-color:var(--accent)}
+.choice.ok{background:var(--good-fill);border-color:var(--good)}
+.choice.bad{background:var(--bad-fill);border-color:var(--bad)}
+.choice.flag{padding:8px;display:grid;place-items:center}
+.choice.flag img{width:100%;max-width:150px;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.bigflag{width:100%;max-width:260px;aspect-ratio:4/3;object-fit:cover;border-radius:6px;border:1px solid var(--line);justify-self:center;background:var(--bg)}
+/* label tray */
+.tray{display:flex;flex-wrap:wrap;gap:8px}
+.tag{border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:8px;padding:7px 11px;cursor:grab;font-weight:700;touch-action:none;user-select:none}
+.tag[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-style:solid}
+.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-120%);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 10px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+/* guess rows */
+.rows{display:grid;gap:6px}
+.grow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px;align-items:center;background:var(--bg);border-radius:8px;padding:7px 10px;font-size:14px}
+.grow .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grow .num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+.grow .arrow{display:inline-block;font-size:18px;line-height:1;color:var(--accent)}
+.grow.win{background:var(--good-fill)}
+.grow .sw{width:14px;height:14px;border-radius:4px;border:1px solid var(--line)}
+.grow.empty{opacity:.45;min-height:34px}
+.sil{background:var(--bg);border-radius:10px;display:grid;place-items:center;padding:8px}
+.sil svg{width:100%;max-width:240px;height:auto}
+.sil path{fill:var(--ink)}
+.chainhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--display);font-weight:800;font-size:22px}
+.chainhead span{color:var(--muted);font-weight:600;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;background:var(--bg);font-weight:600}
+.chip.on{background:var(--good-fill);border-color:var(--good)}
+.chip.off{background:var(--hint-fill);border-color:var(--hint)}
+.chip.hintc{border-style:dashed}
+button.chip{cursor:pointer}
+.end{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;background:var(--bg)}
+.end .score{font-family:var(--display);font-weight:800;font-size:34px;line-height:1}
+.end p{margin:0;color:var(--muted)}
+.info{display:grid;gap:10px}
+.info .head{display:flex;gap:12px;align-items:center}
+.info .head img{width:64px;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.info h3{font-family:var(--display);font-weight:800;font-size:22px;margin:0;line-height:1.1}
+.info .off{color:var(--muted);font-size:13px}
+dl.kv{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ctl{display:grid;grid-template-columns:62px minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.ctl output{font-family:var(--mono);text-align:right;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 4px}
+.verdict{background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+.verdict b{color:var(--accent)}
+#ov{cursor:grab}
+#ov.drag{cursor:grabbing}
+#ov path{fill:color-mix(in srgb,var(--bad) 32%,transparent);stroke:var(--bad);stroke-width:1.8;vector-effect:non-scaling-stroke}
+#ov text{font-family:var(--display);font-weight:800;font-size:16px;fill:var(--bad);text-anchor:middle;paint-order:stroke;stroke:var(--halo);stroke-width:4px;pointer-events:none}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.loading{padding:60px 20px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="globe-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="var(--accent)"/><path d="M2 16h28M16 2c-5 5-5 23 0 28M16 2c5 5 5 23 0 28M5 8.5c6 3 16 3 22 0M5 23.5c6-3 16-3 22 0" fill="none" stroke="var(--accent-ink)" stroke-width="1.6"/></svg>
+      <h1>Atlas <em>Arcade</em></h1>
+    </div>
+    <div class="who" id="who"></div>
+    <div class="pickers" id="pickers">
+      <label for="set" class="lab" style="margin:0">Map</label>
+      <select id="set"></select>
+      <div class="seg" id="diff" role="group" aria-label="Difficulty"></div>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="Game modes"></nav>
+  <main class="main">
+    <section class="panel" id="panel"><div class="loading">Loading the world…</div></section>
+    <section class="stage" id="stage"></section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+const R = 6371.0088, KM2MI = 0.386102, W = 960, H = 600;
+const MODES = [
+  {id:'atlas', name:'Atlas', sub:'True size + facts'},
+  {id:'find', name:'Find It', sub:'Tap the country'},
+  {id:'label', name:'Label It', sub:'Place the names'},
+  {id:'shape', name:'Shape', sub:'Guess the outline'},
+  {id:'hot', name:'Hot & Cold', sub:'Close in on it'},
+  {id:'chain', name:'Border Chain', sub:'Link two places'},
+  {id:'capitals', name:'Capitals', sub:'Cities and countries'},
+  {id:'flags', name:'Flags', sub:'Know the colors'},
+  {id:'players', name:'Players', sub:'Scoreboard'},
+];
+const SETS = {world:'World',africa:'Africa',asia:'Asia',europe:'Europe',namerica:'North & Central America',samerica:'South America',oceania:'Oceania',us:'US States'};
+const BOX = {africa:[-19,-36,52,38],asia:[26,-10,146,55],europe:[-25,34,45,71],namerica:[-168,6,-52,72],samerica:[-82,-56,-34,13],oceania:[112,-48,180,-1]};
+const EASY = new Set('GBR KOR PRK ISR GRC PRT NLD CHE IRL CUB NZL BEL AUT DNK JAM PAN CRI LBN SGP TWN QAT HTI DOM NPL LKA BGD VNM PHL SYR JOR ARE UKR POL ITA ESP DEU JPN ROU HUN CZE URY ECU GTM HND NIC SLV BLZ ISL KHM LAO SEN GHA UGA TUN'.split(' '));
+
+// ---------- storage ----------
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1'}, store.get('aa-prefs', {}));
+let PLAYERS = store.get('aa-players', null);
+if (!PLAYERS){ PLAYERS = ['Player 1']; const old = store.get('aa-stats', null); if (old) store.set('aa-stats:Player 1', old); store.set('aa-players', PLAYERS); }
+if (!PLAYERS.includes(S.player)) S.player = PLAYERS[0];
+let ST = store.get('aa-stats:' + S.player, {});
+const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player});
+function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
+function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
+function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.max(.2, 1 + 2*v[1] - .6*v[0]) : 1.5; }
+function known(mode, arr){ return arr.filter(d => { const v = ST[mode+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length; }
+function pickN(mode, arr, n){
+  const pool = arr.slice(), out = [];
+  while (out.length < n && pool.length){
+    const ws = pool.map(d => weight(mode, d.id) * (0.6 + Math.random()*0.8));
+    let i = ws.indexOf(Math.max(...ws)); out.push(pool.splice(i,1)[0]);
+  }
+  return out;
+}
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j = Math.random()*(i+1)|0; [a[i],a[j]] = [a[j],a[i]]; } return a; };
+const norm = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=[...Array(n+1).keys()]; for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+const close = (a,b) => { a = norm(a); b = norm(b); return a === b || (b.length > 4 && lev(a,b) <= (b.length > 8 ? 2 : 1)); };
+const fmt = n => n >= 100 ? Math.round(n).toLocaleString() : n.toLocaleString(undefined,{maximumFractionDigits:1});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- data ----------
+let C = [], US = [], BY = new Map();
+function trim(f){
+  const g = f.geometry; if (g.type !== 'MultiPolygon') return f;
+  const ps = g.coordinates.map(c => { const p = {type:'Polygon',coordinates:c}; return {c, a:d3.geoArea(p), cen:d3.geoCentroid(p)}; });
+  const main = ps.reduce((a,b) => b.a > a.a ? b : a);
+  const keep = ps.filter(p => d3.geoDistance(p.cen, main.cen) * 180/Math.PI <= 30);
+  return {type:'Feature', geometry:{type:'MultiPolygon', coordinates:keep.map(p => p.c)}};
+}
+function prep(d, type){
+  d.type = type; d.f = {type:'Feature', id:d.id, geometry:d.g};
+  d.ft = trim(d.f); d.cen = d3.geoCentroid(d.ft);
+  d.garea = d3.geoArea(d.ft) * R * R;
+  if (type === 'state') d.a = d3.geoArea(d.f) * R * R;
+  d.pt = (type === 'country' && d.ll2) ? [d.ll2[1], d.ll2[0]] : d.cen;
+  BY.set(d.id, d); return d;
+}
+const universe = set => set === 'us' ? US : C;
+function inSet(d, set){
+  if (set === 'us') return d.type === 'state';
+  if (d.type !== 'country' || !d.sov) return false;
+  if (set === 'world') return true;
+  if (set === 'africa') return d.r === 'Africa';
+  if (set === 'asia') return d.r === 'Asia';
+  if (set === 'europe') return d.r === 'Europe';
+  if (set === 'oceania') return d.r === 'Oceania';
+  if (set === 'samerica') return d.sr === 'South America';
+  if (set === 'namerica') return ['North America','Central America','Caribbean'].includes(d.sr);
+}
+function pool(set = S.set, diff = S.diff){
+  const all = universe(set).filter(d => inSet(d, set));
+  if (set === 'us') return all;
+  const m0 = all.filter(d => d.a >= 10000 || EASY.has(d.id)), med = m0.length >= 6 ? m0 : all;
+  if (diff === 'easy') { const e = all.filter(d => d.a >= 250000 || EASY.has(d.id)); return e.length >= 6 ? e : med; }
+  if (diff === 'medium') return med;
+  return all;
+}
+
+// ---------- shell ----------
+const $ = s => document.querySelector(s);
+const panel = $('#panel'), stage = $('#stage');
+function shell(){
+  $('#set').innerHTML = Object.entries(SETS).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+  $('#set').value = S.set;
+  $('#set').onchange = e => { S.set = e.target.value; saveS(); route(); };
+  $('#diff').innerHTML = ['easy','medium','hard'].map(d => `<button type="button" data-d="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('');
+  $('#diff').onclick = e => { const d = e.target.dataset.d; if (!d) return; S.diff = d; saveS(); route(); };
+  $('#tabs').innerHTML = MODES.map(m => `<a class="tab" href="#${m.id}" data-m="${m.id}"><b>${m.name}</b><span>${m.sub}</span></a>`).join('');
+  window.addEventListener('hashchange', route);
+  renderPlayers();
+}
+function renderPlayers(adding=false){
+  const w = $('#who');
+  if (adding){
+    w.innerHTML = `<label for="np" class="lab" style="margin:0">New player</label><input id="np" type="text" maxlength="20" placeholder="Name" autocomplete="off"><button class="btn primary" type="button" id="npok">Add</button><button class="btn" type="button" id="npx">Cancel</button>`;
+    const add = () => { const n = $('#np').value.trim().slice(0,20); if (!n) return $('#np').focus(); if (!PLAYERS.includes(n)){ PLAYERS.push(n); store.set('aa-players', PLAYERS); } switchPlayer(n); };
+    $('#npok').onclick = add; $('#np').onkeydown = e => { if (e.key === 'Enter') add(); if (e.key === 'Escape') renderPlayers(); };
+    $('#npx').onclick = () => renderPlayers(); $('#np').focus(); return;
+  }
+  w.innerHTML = `<label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select>`;
+  $('#pl').onchange = e => { if (e.target.value === '__new'){ e.target.value = S.player; renderPlayers(true); } else switchPlayer(e.target.value); };
+}
+let cleanup = null;
+function route(){
+  const m = (location.hash || '#find').slice(1);
+  const mode = MODES.find(x => x.id === m) ? m : 'find';
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.m === mode ? 'page' : 'false'));
+  document.querySelectorAll('#diff button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === S.diff));
+  $('#set').value = S.set;
+  $('#pickers').classList.toggle('off', mode === 'atlas');
+  $('#set').disabled = false;
+  if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
+  panel.innerHTML = ''; stage.innerHTML = '';
+  cleanup = ({atlas:modeAtlas, players:modePlayers, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+}
+function head(title, how, mode, items){
+  const k = mode && items ? known(mode, items) : null;
+  return `<div><h2>${title}</h2><p class="how">${how}</p></div>` +
+    (k !== null ? `<div class="meter"><span>You know <b class="num">${k}</b> of <span class="num">${items.length}</span> in ${SETS[S.set]}</span><div class="bar"><i style="width:${items.length ? k/items.length*100 : 0}%"></i></div></div>` : '');
+}
+let toastT;
+function toast(msg, kind=''){
+  let t = stage.querySelector('.toast'); if (!t){ t = document.createElement('div'); stage.appendChild(t); }
+  t.className = 'toast ' + kind; t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 1800);
+}
+function flagImg(d, cls=''){ return d.c2 ? `<img class="${cls}" src="data/flags/${d.c2}.svg" alt="Flag of ${esc(d.n)}">` : ''; }
+
+// ---------- map ----------
+function fc(fs){ return {type:'FeatureCollection', features:fs}; }
+function boxGeo(b){ const mx = (b[0]+b[2])/2; return {type:'MultiPoint', coordinates:[[b[0],b[1]],[b[2],b[1]],[b[2],b[3]],[b[0],b[3]],[mx,b[1]],[mx,b[3]],[b[0],(b[1]+b[3])/2],[b[2],(b[1]+b[3])/2]]}; }
+function projFor(set, fitItems){
+  const ext = [[16,16],[W-16,H-16]];
+  if (set === 'us') return d3.geoAlbersUsa().fitExtent(ext, fc((fitItems || US).map(d => d.f)));
+  if (!fitItems && set === 'world') return d3.geoNaturalEarth1().fitExtent([[8,8],[W-8,H-8]], {type:'Sphere'});
+  const geo = fitItems ? fc(fitItems.map(d => d.ft)) : boxGeo(BOX[set]);
+  const cx = fitItems ? d3.geoCentroid(geo)[0] : (BOX[set][0]+BOX[set][2])/2;
+  return d3.geoNaturalEarth1().rotate([-cx, 0]).fitExtent(ext, geo);
+}
+function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=null, onPick=null}){
+  const svg = d3.select(host).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('role','img').attr('aria-label',`Map of ${SETS[set]}`);
+  const proj = projFor(set, fit), path = d3.geoPath(proj);
+  svg.append('rect').attr('class','water').attr('width',W).attr('height',H);
+  const g = svg.append('g');
+  if (set !== 'us'){
+    g.append('path').attr('class','sphere').attr('d', path({type:'Sphere'}));
+    g.append('path').attr('class','grat').attr('d', path(d3.geoGraticule10()));
+  }
+  const fp = g.append('g').selectAll('path').data(items, d => d.id).join('path')
+    .attr('class', d => 'f' + (active.has(d.id) ? ' act' : '')).attr('d', d => path(d.f));
+  fp.append('title').text(d => active.has(d.id) || !onPick ? '' : d.n);
+  const tiny = items.filter(d => active.has(d.id) && path.area(d.ft) < 45 && proj(d.cen));
+  const dots = g.append('g').selectAll('circle').data(tiny, d => d.id).join('circle').attr('class','dot act')
+    .attr('cx', d => proj(d.cen)[0]).attr('cy', d => proj(d.cen)[1]).attr('r', 7);
+  const lab = g.append('g');
+  let k = 1;
+  if (onPick){ fp.on('click', (e,d) => onPick(d,e)); dots.on('click', (e,d) => onPick(d,e)); }
+  const zb = d3.zoom().scaleExtent([1, 24]).translateExtent([[-W*.2,-H*.2],[W*1.2,H*1.2]]).on('zoom', e => {
+    g.attr('transform', e.transform); k = e.transform.k;
+    dots.attr('r', 7/Math.sqrt(k)); lab.selectAll('text').attr('font-size', 13/k).attr('stroke-width', 3.5/k);
+  });
+  svg.call(zb).on('dblclick.zoom', null);
+  const zc = document.createElement('div'); zc.className = 'zoomctl';
+  zc.innerHTML = '<button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Reset zoom" style="font-size:13px">⤢</button>';
+  const [zi, zo, zr] = zc.querySelectorAll('button');
+  zi.onclick = () => svg.transition().duration(300).call(zb.scaleBy, 1.8);
+  zo.onclick = () => svg.transition().duration(300).call(zb.scaleBy, 1/1.8);
+  zr.onclick = () => svg.transition().duration(400).call(zb.transform, d3.zoomIdentity);
+  host.appendChild(zc);
+  const sel = id => [fp.filter(d => d.id === id), dots.filter(d => d.id === id)];
+  return {
+    svg, proj, path,
+    cls(id, c, on=true){ sel(id).forEach(s => s.classed(c, on)); },
+    clear(c){ fp.classed(c, false); dots.classed(c, false); },
+    fill(id, col){ sel(id).forEach(s => s.style('fill', col)); },
+    flash(id, c='bad'){ sel(id).forEach(s => { s.classed(c, true); setTimeout(() => s.classed(c, false), 650); }); },
+    label(d, text, cls=''){ const p = proj(d.cen); if (!p) return; lab.selectAll(`text[data-id="${d.id}"]`).remove();
+      lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('font-size', 13/k).attr('stroke-width', 3.5/k).text(text); },
+    clearLabels(){ lab.selectAll('*').remove(); },
+    focus(list, maxK=8){
+      const bs = list.map(d => path.bounds(d.ft)).filter(b => isFinite(b[0][0]));
+      if (!bs.length) return;
+      const x0 = d3.min(bs, b => b[0][0]), y0 = d3.min(bs, b => b[0][1]), x1 = d3.max(bs, b => b[1][0]), y1 = d3.max(bs, b => b[1][1]);
+      const kk = Math.max(1, Math.min(maxK, .55 / Math.max((x1-x0+20)/W, (y1-y0+20)/H)));
+      svg.transition().duration(700).call(zb.transform, d3.zoomIdentity.translate(W/2, H/2).scale(kk).translate(-(x0+x1)/2, -(y0+y1)/2));
+    },
+    reset(){ svg.transition().duration(500).call(zb.transform, d3.zoomIdentity); }
+  };
+}
+
+// ---------- typed guess ----------
+function makeGuess(host, {placeholder='Type a country', items, onPick, sub}){
+  host.classList.add('guess');
+  host.innerHTML = `<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}"><ul hidden role="listbox"></ul>`;
+  const inp = host.querySelector('input'), ul = host.querySelector('ul');
+  let list = [], sel = 0;
+  const names = d => [d.n, d.o, ...(d.alt || [])].filter(Boolean);
+  function show(){
+    const t = norm(inp.value); if (!t){ ul.hidden = true; return; }
+    const src = items();
+    const score = d => { const ns = names(d).map(norm); if (ns[0] === t) return 0; if (ns.some(n => n === t)) return 1; if (ns[0].startsWith(t)) return 2; if (ns.some(n => n.startsWith(t))) return 3; if (ns.some(n => n.includes(t))) return 4; return 9; };
+    list = src.map(d => [d, score(d)]).filter(x => x[1] < 9).sort((a,b) => a[1]-b[1] || a[0].n.localeCompare(b[0].n)).slice(0, 8).map(x => x[0]);
+    sel = 0; ul.innerHTML = list.length ? list.map((d,i) => `<li role="option" aria-selected="${i===0}" data-i="${i}">${esc(d.n)}${sub ? `<small>${esc(sub(d))}</small>` : ''}</li>`).join('') : '<li>No match</li>';
+    ul.hidden = false;
+  }
+  function pick(d){ ul.hidden = true; inp.value = ''; onPick(d); inp.focus(); }
+  inp.addEventListener('input', show);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ if (!list.length) return; e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length; [...ul.children].forEach((li,i) => li.setAttribute('aria-selected', i===sel)); }
+    else if (e.key === 'Enter'){ e.preventDefault(); if (!ul.hidden && list[sel]) pick(list[sel]); }
+    else if (e.key === 'Escape') ul.hidden = true;
+  });
+  ul.addEventListener('mousedown', e => { const li = e.target.closest('li'); if (li && li.dataset.i) { e.preventDefault(); pick(list[+li.dataset.i]); } });
+  inp.addEventListener('blur', () => setTimeout(() => ul.hidden = true, 150));
+  return {input: inp, disable(v){ inp.disabled = v; }};
+}
+
+// ---------- round end ----------
+function endCard(host, {right, total, secs, misses, again, drill}){
+  const el = document.createElement('div'); el.className = 'end';
+  el.innerHTML = `<div class="score num">${right}/${total}</div><p>${right === total ? 'Clean sweep.' : 'First-try correct.'}${secs != null ? ` Time ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}.` : ''}</p>` +
+    (misses.length ? `<div><p class="lab">To review</p><div class="chips">${misses.map(d => `<span class="chip off">${esc(d.n)}</span>`).join('')}</div></div>` : '') +
+    `<div class="row"><button class="btn primary" type="button" data-a="again">New round</button>${misses.length ? '<button class="btn" type="button" data-a="drill">Drill the misses</button>' : ''}</div>`;
+  el.onclick = e => { const a = e.target.dataset.a; if (a === 'again') again(); if (a === 'drill') drill(misses); };
+  host.appendChild(el);
+  el.querySelector('button').focus({preventScroll:true});
+}
+function timer(el){ const t0 = Date.now(); const iv = setInterval(() => { const s = (Date.now()-t0)/1000|0; el.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }, 500); return {stop(){ clearInterval(iv); return (Date.now()-t0)/1000|0; }}; }
+
+// ================= MODES =================
+
+// ---- Find It ----
+function modeFind(preset){
+  const P = pool(); const items = preset || pickN('find', P, Math.min(10, P.length));
+  panel.innerHTML = head('Find It', 'Tap the country on the map. Three tries, then we show you.', 'find', P) +
+    `<div class="prompt"><small>Find</small><strong id="q"></strong></div>
+     <div class="stats"><span>Q <b id="qi"></b>/${items.length}</span><span>Score <b id="sc">0</b></span><span>Time <b id="tm">0:00</b></span></div>
+     <div class="row"><button class="btn" id="skip" type="button">Show me</button></div><div id="endh"></div>`;
+  let i = 0, tries = 0, right = 0, busy = false; const misses = []; const tm = timer($('#tm'));
+  const map = makeMap(stage, {active:new Set(P.map(d => d.id)), onPick:pick});
+  stage.insertAdjacentHTML('beforeend', '<div class="hint-line">Pinch, scroll or use + to zoom. Dots mark tiny countries.</div>');
+  function ask(){ if (i >= items.length) return finish(); tries = 0; $('#q').textContent = items[i].n; $('#qi').textContent = i+1; }
+  function reveal(){ const q = items[i]; busy = true; misses.push(q); rec('find', q.id, false);
+    map.cls(q.id, 'reveal'); map.label(q, q.n, 'miss'); map.focus([q], 5);
+    setTimeout(() => { map.cls(q.id,'reveal',false); map.cls(q.id,'meh'); map.reset(); busy = false; i++; ask(); }, 1700); }
+  function pick(d){
+    if (busy || i >= items.length) return; const q = items[i];
+    if (d.id === q.id){
+      map.cls(d.id, tries ? 'meh' : 'ok'); map.label(q, q.n);
+      if (!tries){ right++; $('#sc').textContent = right; rec('find', q.id, true); toast('Yes, ' + q.n, 'good'); } else { misses.push(q); rec('find', q.id, false); toast(q.n); }
+      i++; ask();
+    } else { tries++; map.flash(d.id); toast(`That's ${d.n}`, 'bad'); if (tries >= 3) reveal(); }
+  }
+  $('#skip').onclick = () => { if (!busy && i < items.length) reveal(); };
+  function finish(){ $('#q').textContent = 'Done'; $('#skip').disabled = true;
+    endCard($('#endh'), {right, total:items.length, secs:tm.stop(), misses, again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = modeFind(m); }}); }
+  ask(); return () => tm.stop();
+}
+
+// ---- Label It ----
+function modeLabel(preset){
+  const P = pool(); const items = preset || pickN('label', P, Math.min(8, P.length));
+  const hard = S.diff === 'hard';
+  panel.innerHTML = head('Label It', 'Drag each name onto its country, or tap a name and then tap the country.', 'label', P) +
+    `<div class="tray" id="tray"></div><div class="stats"><span>Placed <b id="pl">0</b>/${items.length}</span><span>Misses <b id="ms">0</b></span><span>Time <b id="tm">0:00</b></span></div>
+     <p class="note">${hard ? 'Hard: every country in the region is highlighted.' : 'Highlighted countries are the ones to label.'}</p><div id="endh"></div>`;
+  const tm = timer($('#tm'));
+  const act = new Set((hard ? P : items).map(d => d.id));
+  const map = makeMap(stage, {active:act, onPick:(d) => { if (selected) check(selected, d); else toast('Pick a name first'); }, fit: S.set === 'world' && !hard ? null : null});
+  if (S.set === 'world') map.focus(items, 2.2);
+  let selected = null, placed = 0, missCount = 0; const missed = new Set();
+  const tray = $('#tray');
+  shuffle(items).forEach(d => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tag'; b.textContent = d.n; b._d = d; b.setAttribute('aria-pressed','false'); tray.appendChild(b); });
+  function setSel(b){ tray.querySelectorAll('.tag').forEach(t => t.setAttribute('aria-pressed', t === b)); selected = b ? b._d : null; }
+  function check(item, d){
+    if (d.id === item.id){
+      map.cls(d.id, missed.has(item.id) ? 'meh' : 'ok'); map.label(d, d.n); rec('label', d.id, !missed.has(item.id));
+      [...tray.children].find(t => t._d === item)?.remove(); setSel(null); placed++; $('#pl').textContent = placed;
+      if (placed === items.length) finish();
+    } else { map.flash(d.id); missed.add(item.id); missCount++; $('#ms').textContent = missCount; toast(`Not ${item.n}. That's ${d.n}`, 'bad'); }
+  }
+  // drag
+  let drag = null;
+  tray.addEventListener('pointerdown', e => { const b = e.target.closest('.tag'); if (!b) return; drag = {b, x:e.clientX, y:e.clientY, moved:false, ghost:null}; b.setPointerCapture(e.pointerId); });
+  tray.addEventListener('pointermove', e => { if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 6){ drag.moved = true; drag.ghost = document.createElement('div'); drag.ghost.className = 'ghost'; drag.ghost.textContent = drag.b._d.n; document.body.appendChild(drag.ghost); }
+    if (drag.ghost){ drag.ghost.style.left = e.clientX+'px'; drag.ghost.style.top = e.clientY+'px'; } });
+  tray.addEventListener('pointerup', e => { if (!drag) return; const dr = drag; drag = null;
+    if (dr.ghost){ dr.ghost.remove(); const el = document.elementFromPoint(e.clientX, e.clientY - 0);
+      const hit = el && (el.matches('path.f') || el.matches('circle.dot')) ? d3.select(el).datum() : null;
+      if (hit) check(dr.b._d, hit); }
+    else setSel(selected === dr.b._d ? null : dr.b); });
+  tray.addEventListener('pointercancel', () => { drag?.ghost?.remove(); drag = null; });
+  function finish(){ const secs = tm.stop(); endCard($('#endh'), {right:items.length - missed.size, total:items.length, secs, misses:items.filter(d => missed.has(d.id)), again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = modeLabel(m); }}); }
+  return () => { tm.stop(); document.querySelectorAll('.ghost').forEach(g => g.remove()); };
+}
+
+// ---- Shape (silhouette) ----
+function bearing(a, b){ const r = Math.PI/180, [l1,p1] = [a[0]*r,a[1]*r], [l2,p2] = [b[0]*r,b[1]*r];
+  const y = Math.sin(l2-l1)*Math.cos(p2), x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(l2-l1); return (Math.atan2(y,x)/r + 360) % 360; }
+function modeShape(){
+  const P = pool(); const target = pickN('shape', P, 1)[0]; const U = universe(S.set);
+  const MAXD = S.set === 'us' ? 4600 : 20015, MAXG = 6;
+  panel.innerHTML = head('Shape', `Name the ${S.set === 'us' ? 'state' : 'country'} from its outline. Six guesses. Each miss tells you how far and which way.`, 'shape', P) +
+    `<div class="sil"><svg viewBox="0 0 240 240" aria-label="Mystery outline"><path id="silp"></path></svg></div>
+     <div id="gin"></div><div class="rows" id="rows"></div>
+     <div class="row"><button class="btn" id="hint" type="button">Hint</button><button class="btn" id="give" type="button">Reveal</button><button class="btn" id="nxt" type="button" hidden>Next shape</button></div><div id="endh"></div>`;
+  const sp = d3.geoAzimuthalEqualArea().rotate([-target.cen[0], -target.cen[1]]).fitExtent([[14,14],[226,226]], target.ft);
+  $('#silp').setAttribute('d', d3.geoPath(sp)(target.ft));
+  const map = makeMap(stage, {});
+  const guesses = []; let done = false, hints = 0;
+  const rows = $('#rows');
+  function draw(){
+    rows.innerHTML = guesses.map(g => { const win = g.id === target.id; const d = d3.geoDistance(g.pt, target.pt)*R; const b = bearing(g.pt, target.pt); const p = Math.round(Math.max(0, 1 - d/MAXD)*100);
+      return `<div class="grow${win ? ' win' : ''}"><span class="nm">${esc(g.n)}</span><span class="num">${win ? '0' : fmt(d)} km</span><span class="arrow" style="transform:rotate(${b}deg)" aria-label="direction">${win ? '★' : '↑'}</span><span class="num">${win ? 100 : p}%</span></div>`; }).join('') +
+      Array(Math.max(0, MAXG - guesses.length)).fill('<div class="grow empty"></div>').join('');
+  }
+  const gi = makeGuess($('#gin'), {placeholder: S.set === 'us' ? 'Type a state' : 'Type a country', items:() => U.filter(d => !guesses.includes(d)), onPick:g => {
+    if (done) return; guesses.push(g); const d = d3.geoDistance(g.pt, target.pt)*R;
+    map.fill(g.id, g.id === target.id ? 'var(--good-fill)' : d3.interpolateRgb('#ffe066','#e03131')(Math.max(0, 1 - d/(MAXD*.35)))); map.label(g, g.n);
+    draw(); if (g.id === target.id) end(true); else if (guesses.length >= MAXG) end(false); }});
+  $('#hint').onclick = () => { hints++; const h = hints === 1 ? (target.type === 'state' ? `Neighbors ${target.b.length} state${target.b.length===1?'':'s'}` : `Region: ${target.sr || target.r}`) : hints === 2 ? `Starts with ${target.n[0]}` : `Capital: ${target.cap[0] || 'none listed'}`; toast(h); if (hints >= 3) $('#hint').disabled = true; };
+  $('#give').onclick = () => end(false);
+  $('#nxt').onclick = () => route();
+  function end(win){ done = true; gi.disable(true); rec('shape', target.id, win && guesses.length <= 3 && hints === 0);
+    map.cls(target.id, win ? 'ok' : 'reveal'); map.label(target, target.n, win ? '' : 'miss'); map.focus([target], 4);
+    $('#hint').hidden = true; $('#give').hidden = true; $('#nxt').hidden = false;
+    $('#endh').innerHTML = `<div class="end"><div class="score">${win ? `Got it in ${guesses.length}` : esc(target.n)}</div><p>${win ? esc(target.n) + '.' : 'That was the answer.'}${target.cap[0] ? ` Capital: ${esc(target.cap[0])}.` : ''}</p></div>`; }
+  draw(); gi.input.focus({preventScroll:true});
+}
+
+// ---- Hot & Cold ----
+const SAMPLES = new Map();
+function samples(d){ if (SAMPLES.has(d.id)) return SAMPLES.get(d.id); const pts = [];
+  (function walk(c){ if (typeof c[0] === 'number') pts.push(c); else c.forEach(walk); })(d.ft.geometry.coordinates);
+  const step = Math.max(1, Math.ceil(pts.length/140)); const s = pts.filter((_,i) => i % step === 0); SAMPLES.set(d.id, s); return s; }
+function gap(a, b){ if (a.id === b.id) return 0; if (a.b?.includes(b.id) || b.b?.includes(a.id)) return 0;
+  const A = samples(a), B = samples(b); let m = Infinity; for (const p of A) for (const q of B){ const d = d3.geoDistance(p,q); if (d < m) m = d; } return m * R; }
+function makeGlobe(host, {items, center=[0,20]}){
+  const svg = d3.select(host).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('aria-label','Globe');
+  const proj = d3.geoOrthographic().fitExtent([[20,20],[W-20,H-20]], {type:'Sphere'}).rotate([-center[0], -center[1]]).clipAngle(90);
+  const s0 = proj.scale(); const path = d3.geoPath(proj);
+  svg.append('rect').attr('class','water').attr('width',W).attr('height',H).style('fill','var(--bg)');
+  const sph = svg.append('path').attr('class','sphere').datum({type:'Sphere'});
+  const grat = svg.append('path').attr('class','grat').datum(d3.geoGraticule10());
+  const fp = svg.append('g').selectAll('path').data(items, d => d.id).join('path').attr('class','f');
+  const lab = svg.append('g'); const labels = new Map();
+  function redraw(){ sph.attr('d', path); grat.attr('d', path); fp.attr('d', d => path(d.f));
+    const r = proj.rotate(), c = [-r[0], -r[1]];
+    lab.selectAll('text').data([...labels.values()], d => d.d.id).join('text').attr('class', d => 'lbl ' + d.cls).attr('font-size', 13).attr('stroke-width', 3.5)
+      .attr('display', d => d3.geoDistance(d.d.cen, c) < Math.PI/2 - .05 ? null : 'none')
+      .attr('x', d => proj(d.d.cen)[0]).attr('y', d => proj(d.d.cen)[1]).text(d => d.t); }
+  svg.call(d3.drag().on('drag', e => { const r = proj.rotate(), k = 70/proj.scale(); proj.rotate([r[0] + e.dx*k, Math.max(-85, Math.min(85, r[1] - e.dy*k))]); redraw(); }));
+  svg.on('wheel', e => { e.preventDefault(); proj.scale(Math.max(s0*.8, Math.min(s0*8, proj.scale() * (e.deltaY < 0 ? 1.12 : 1/1.12)))); redraw(); }, {passive:false});
+  const zc = document.createElement('div'); zc.className = 'zoomctl';
+  zc.innerHTML = '<button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button>';
+  zc.children[0].onclick = () => { proj.scale(Math.min(s0*8, proj.scale()*1.5)); redraw(); };
+  zc.children[1].onclick = () => { proj.scale(Math.max(s0*.8, proj.scale()/1.5)); redraw(); };
+  host.appendChild(zc);
+  redraw();
+  return {
+    fill(id, col){ fp.filter(d => d.id === id).style('fill', col); },
+    cls(id, c, on=true){ fp.filter(d => d.id === id).classed(c, on); },
+    label(d, t, cls=''){ labels.set(d.id, {d, t, cls}); redraw(); },
+    focus(list){ const to = list[0].cen; const r0 = proj.rotate(), r1 = [-to[0], -to[1]]; const ip = d3.interpolate(r0, r1);
+      d3.transition().duration(800).tween('rot', () => t => { proj.rotate(ip(t)); redraw(); }); },
+    reset(){}
+  };
+}
+function modeHot(){
+  const P = pool(); const target = pickN('hot', P, 1)[0]; const U = universe(S.set); const isUS = S.set === 'us';
+  const MAXH = isUS ? 1600 : 5000;
+  panel.innerHTML = head('Hot & Cold', `Find the mystery ${isUS ? 'state' : 'country'}. Each guess lights up: the hotter the color, the closer you are. Neighbors count as 0 km.`, 'hot', P) +
+    `<div id="gin"></div><div class="stats"><span>Guesses <b id="gc">0</b></span><span>Closest <b id="cl">–</b></span></div>
+     <div class="rows" id="rows"></div><div class="row"><button class="btn" id="give" type="button">Reveal</button><button class="btn" id="nxt" type="button" hidden>New mystery</button></div><div id="endh"></div>`;
+  const regionCenter = S.set === 'world' || isUS ? [10, 25] : [(BOX[S.set][0]+BOX[S.set][2])/2, (BOX[S.set][1]+BOX[S.set][3])/2];
+  const map = isUS ? makeMap(stage, {}) : makeGlobe(stage, {items:U, center:regionCenter});
+  stage.insertAdjacentHTML('beforeend', `<div class="hint-line">${isUS ? 'Scroll or + to zoom.' : 'Drag to spin the globe.'}</div>`);
+  const heat = t => d3.interpolateRgb('#fff3bf', '#c92a2a')(Math.pow(t, .8));
+  const gs = []; let done = false;
+  function draw(){ const sorted = gs.slice().sort((a,b) => a.km - b.km);
+    $('#rows').innerHTML = sorted.map(g => `<div class="grow${g.d.id === target.id ? ' win' : ''}"><span class="nm">${esc(g.d.n)}</span><span class="num">${g.d.id === target.id ? 'Found' : g.km < 1 ? 'Touching' : fmt(g.km) + ' km'}</span><span class="sw" style="background:${g.col}"></span><span></span></div>`).join('');
+    $('#gc').textContent = gs.length; const c = sorted.find(g => g.d.id !== target.id); $('#cl').textContent = c ? (c.km < 1 ? 'touching' : fmt(c.km) + ' km') : '–'; }
+  const gi = makeGuess($('#gin'), {placeholder: isUS ? 'Type a state' : 'Type a country', items:() => U.filter(d => !gs.some(g => g.d === d)), onPick:d => {
+    if (done) return; const km = gap(d, target); const win = d.id === target.id;
+    const col = win ? 'var(--good-fill)' : heat(1 - Math.min(km, MAXH)/MAXH);
+    gs.push({d, km, col}); map.fill(d.id, col); map.label(d, d.n); map.focus([d]); draw(); if (win) end(true); }});
+  $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
+  function end(win){ done = true; gi.disable(true); rec('hot', target.id, win && gs.length <= 8);
+    map.fill(target.id, win ? 'var(--good-fill)' : 'var(--hint-fill)'); map.label(target, target.n, win ? '' : 'miss'); map.focus([target], 4);
+    $('#give').hidden = true; $('#nxt').hidden = false;
+    $('#endh').innerHTML = `<div class="end"><div class="score">${win ? `${gs.length} guess${gs.length === 1 ? '' : 'es'}` : esc(target.n)}</div><p>${win ? `Found ${esc(target.n)}.` : 'That was the mystery.'}</p></div>`; }
+  draw(); gi.input.focus({preventScroll:true});
+}
+
+// ---- Border Chain ----
+function bfs(src, ids){ const dist = new Map([[src.id, 0]]), q = [src]; while (q.length){ const d = q.shift(); for (const n of d.b || []){ const nd = BY.get(n); if (!nd || (ids && !ids.has(n)) || dist.has(n)) continue; dist.set(n, dist.get(d.id) + 1); q.push(nd); } } return dist; }
+function modeChain(){
+  const U = universe(S.set); const P = pool().filter(d => d.b && d.b.length);
+  const [lo, hi] = {easy:[2,3], medium:[3,5], hard:[4,7]}[S.diff];
+  let A, B, dA, D;
+  for (let t = 0; t < 80; t++){ A = pickN('chain', P, 1)[0]; dA = bfs(A); const cand = P.filter(d => { const x = dA.get(d.id); return x >= lo && x <= hi; }); if (cand.length){ B = cand[Math.random()*cand.length|0]; break; } }
+  if (!B){ panel.innerHTML = head('Border Chain','Not enough land borders in this map at this level. Try a bigger region or another difficulty.'); return; }
+  D = dA.get(B.id); const dB = bfs(B);
+  const path0 = [A]; let cur = A; while (cur.id !== B.id){ cur = BY.get(cur.b.find(n => dA.get(n) === dA.get(cur.id)+1 && dB.get(n) === D - dA.get(cur.id) - 1)); path0.push(cur); }
+  const MAXG = D - 1 + 4;
+  const tapOK = S.diff === 'easy';
+  panel.innerHTML = head('Border Chain', `Connect the two ${S.set === 'us' ? 'states' : 'countries'} through shared land borders. Shortest chain needs ${D-1} in between.${tapOK ? ' On Easy you can also tap the map.' : ''}`, 'chain', P) +
+    `<div class="chainhead">${esc(A.n)} <span>to</span> ${esc(B.n)}</div>
+     <div id="gin"></div><div class="stats"><span>Guesses <b id="gc">0</b>/${MAXG}</span><span>Best <b>${D-1}</b></span></div>
+     <div class="chips" id="gl"></div><p class="note">Green is on a shortest route. Orange still borders things but takes the long way.</p>
+     <div class="row"><button class="btn" id="hint" type="button">Hint (costs a guess)</button><button class="btn" id="give" type="button">Show route</button><button class="btn" id="nxt" type="button" hidden>New chain</button></div><div id="endh"></div>`;
+  const map = makeMap(stage, {fit:path0, onPick: tapOK ? (d => guess(d)) : null, active: tapOK ? new Set(U.map(d => d.id)) : new Set()});
+  map.cls(A.id, 'endpt'); map.cls(B.id, 'endpt'); map.label(A, A.n, 'end'); map.label(B, B.n, 'end');
+  const guessed = []; let done = false, used = 0;
+  function onPath(d){ return dA.get(d.id) + dB.get(d.id) === D; }
+  function linked(){ const ids = new Set([A.id, B.id, ...guessed.map(d => d.id)]); return bfs(A, ids).has(B.id); }
+  function draw(){ $('#gc').textContent = used; $('#gl').innerHTML = guessed.map(d => `<span class="chip ${onPath(d) ? 'on' : 'off'}${d._h ? ' hintc' : ''}">${esc(d.n)}</span>`).join(''); }
+  function guess(d, viaHint){
+    if (done || d.id === A.id || d.id === B.id || guessed.includes(d)) return;
+    d._h = !!viaHint; guessed.push(d); used++;
+    map.cls(d.id, onPath(d) ? 'ok' : 'meh'); map.label(d, d.n); draw();
+    if (linked()) end(true); else if (used >= MAXG) end(false);
+  }
+  const gi = makeGuess($('#gin'), {placeholder: S.set === 'us' ? 'Type a state' : 'Type a country', items:() => U.filter(d => !guessed.includes(d) && d !== A && d !== B), onPick:d => guess(d)});
+  $('#hint').onclick = () => { const n = path0.slice(1,-1).find(d => !guessed.includes(d)) || U.find(d => onPath(d) && !guessed.includes(d) && d !== A && d !== B); if (n) guess(n, true); };
+  $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
+  function end(win){ done = true; gi.disable(true); rec('chain', A.id, win && used <= D+1);
+    if (!win) path0.slice(1,-1).forEach(d => { if (!guessed.includes(d)){ map.cls(d.id,'reveal'); map.label(d, d.n, 'miss'); } });
+    ['hint','give'].forEach(id => $('#'+id).hidden = true); $('#nxt').hidden = false;
+    $('#endh').innerHTML = `<div class="end"><div class="score">${win ? (used === D-1 ? 'Perfect chain' : `Linked in ${used}`) : 'Route shown'}</div><p>One shortest route: ${path0.map(d => esc(d.n)).join(' → ')}.</p></div>`; }
+  draw();
+}
+
+// ---- shared Q&A engine for Capitals and Flags ----
+function distract(q, n, src, key){
+  const same = shuffle(src.filter(d => d !== q && (q.type === 'state' || d.r === q.r) && key(d) && key(d) !== key(q)));
+  const rest = shuffle(src.filter(d => d !== q && !same.includes(d) && key(d)));
+  const out = []; for (const d of [...same, ...rest]){ if (out.length >= n) break; if (!out.some(o => key(o) === key(d))) out.push(d); } return out;
+}
+function quizRound({mode, title, how, items, P, askHTML, choicesFor, typed, typedItems, check, onShow, after, redo}){
+  panel.innerHTML = head(title, how, mode, P) +
+    `<div id="ask"></div><div id="ans"></div><div class="stats"><span>Q <b id="qi"></b>/${items.length}</span><span>Score <b id="sc">0</b></span></div>
+     <div class="row"><button class="btn primary" id="nx" type="button" hidden>Next</button></div><div id="endh"></div>`;
+  let i = 0, right = 0, locked = false; const misses = [];
+  function ask(){
+    if (i >= items.length) return finish(); locked = false; $('#nx').hidden = true; const q = items[i];
+    $('#qi').textContent = i+1; $('#ask').innerHTML = askHTML(q); onShow?.(q, false);
+    const ans = $('#ans'); ans.innerHTML = '';
+    if (typed){
+      const box = document.createElement('div'); ans.appendChild(box);
+      if (typedItems){ makeGuess(box, {placeholder: typed, items: typedItems, onPick: d => answer(check(q, d), d.n) }); }
+      else { box.className = 'guess'; box.innerHTML = `<input type="text" autocomplete="off" spellcheck="false" placeholder="${esc(typed)}" aria-label="${esc(typed)}">`;
+        box.firstChild.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.value.trim()) answer(check(q, e.target.value), e.target.value); }); }
+      box.querySelector('input').focus({preventScroll:true});
+    } else {
+      const ch = choicesFor(q); const g = document.createElement('div'); g.className = 'choices'; ans.appendChild(g);
+      ch.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice' + (c.flag ? ' flag' : ''); b.innerHTML = c.html; b._ok = c.ok;
+        b.onclick = () => { if (locked) return; g.querySelectorAll('.choice').forEach(x => { if (x._ok) x.classList.add('ok'); }); if (!c.ok) b.classList.add('bad'); answer(c.ok); }; g.appendChild(b); });
+    }
+  }
+  function answer(ok){
+    if (locked) return; locked = true; const q = items[i]; rec(mode, q.id, ok);
+    if (ok){ right++; $('#sc').textContent = right; toast('Correct', 'good'); } else { misses.push(q); }
+    if (typed){ $('#ans').insertAdjacentHTML('beforeend', `<div class="prompt" style="background:${ok ? 'var(--good-fill)' : 'var(--bad-fill)'}"><small>${ok ? 'Correct' : 'Answer'}</small><strong>${esc(after(q))}</strong></div>`); $('#ans input').disabled = true; }
+    onShow?.(q, true);
+    if (ok) setTimeout(() => { if (items[i] === q){ i++; ask(); } }, 1100); else { $('#nx').hidden = false; $('#nx').focus({preventScroll:true}); }
+  }
+  $('#nx').onclick = () => { i++; ask(); };
+  function finish(){ $('#ask').innerHTML = ''; $('#ans').innerHTML = ''; $('#nx').hidden = true;
+    endCard($('#endh'), {right, total:items.length, misses, again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = redo(m); }}); }
+  ask();
+}
+function dirToggle(key, opts){
+  const wrap = document.createElement('div'); wrap.className = 'seg'; wrap.setAttribute('role','group');
+  wrap.innerHTML = opts.map(([v,l]) => `<button type="button" data-v="${v}" aria-pressed="${S[key] === v}">${l}</button>`).join('');
+  wrap.onclick = e => { const v = e.target.dataset.v; if (!v) return; S[key] = v; saveS(); route(); };
+  return wrap;
+}
+
+// ---- Capitals ----
+function modeCapitals(preset){
+  const P = pool().filter(d => d.cap && d.cap.length); const items = preset || pickN('cap-' + S.capDir, P, Math.min(10, P.length));
+  const fwd = S.capDir === 'c2cap', hard = S.diff === 'hard', U = universe(S.set);
+  const map = makeMap(stage, {});
+  quizRound({mode:'cap-' + S.capDir, title:'Capitals', P, items, redo:modeCapitals,
+    how: fwd ? `Name the capital. ${hard ? 'Type it; small typos are fine.' : 'Pick one of four.'}` : `Which ${S.set === 'us' ? 'state' : 'country'} is this the capital of?`,
+    askHTML: q => fwd ? `<div class="prompt"><small>Capital of</small><strong>${esc(q.n)}</strong></div>` : `<div class="prompt"><small>${S.set === 'us' ? 'State' : 'Country'} with the capital</small><strong>${esc(q.cap[0])}</strong></div>`,
+    choicesFor: q => fwd ? shuffle([{html:esc(q.cap[0]), ok:true}, ...distract(q, 3, P.length > 6 ? P : U, d => d.cap?.[0]).map(d => ({html:esc(d.cap[0]), ok:false}))])
+                         : shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, P.length > 6 ? P : U, d => d.n).map(d => ({html:esc(d.n), ok:false}))]),
+    typed: hard ? (fwd ? 'Type the capital' : (S.set === 'us' ? 'Type a state' : 'Type a country')) : null,
+    typedItems: hard && !fwd ? () => U : null,
+    check: (q, a) => fwd ? q.cap.some(c => close(a, c)) : a.id === q.id,
+    after: q => fwd ? q.cap.join(' / ') : q.n,
+    onShow: (q, answered) => { map.clear('sel'); map.clearLabels(); if (fwd || answered){ map.cls(q.id, 'sel'); map.focus([q], 6); if (answered) map.label(q, q.n); } else map.reset(); }
+  });
+  panel.firstElementChild.after(dirToggle('capDir', [['c2cap', 'Country → Capital'], ['cap2c', 'Capital → Country']]));
+  if (S.set === 'us') panel.querySelector('.seg [data-v="c2cap"]').textContent = 'State → Capital', panel.querySelector('.seg [data-v="cap2c"]').textContent = 'Capital → State';
+}
+
+// ---- Flags ----
+function modeFlags(preset){
+  if (S.set === 'us'){
+    panel.innerHTML = head('Flags', 'Flags here cover countries. Switch the map to the world or a continent.') + '<div class="row"><button class="btn primary" type="button" id="sw">Switch to World</button></div>';
+    $('#sw').onclick = () => { S.set = 'world'; saveS(); route(); }; makeMap(stage, {}); return;
+  }
+  const P = pool(); const items = preset || pickN('flag-' + S.flagDir, P, Math.min(10, P.length));
+  const fwd = S.flagDir === 'flag2c', hard = S.diff === 'hard';
+  const map = makeMap(stage, {});
+  quizRound({mode:'flag-' + S.flagDir, title:'Flags', P, items, redo:modeFlags,
+    how: fwd ? (hard ? 'Type the country for this flag.' : 'Pick the country that flies this flag.') : 'Pick the right flag.',
+    askHTML: q => fwd ? `<img class="bigflag" src="data/flags/${q.c2}.svg" alt="Mystery flag">` : `<div class="prompt"><small>Flag of</small><strong>${esc(q.n)}</strong></div>`,
+    choicesFor: q => fwd ? shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, P.length > 6 ? P : C, d => d.n).map(d => ({html:esc(d.n), ok:false}))])
+                         : shuffle([{html:flagImg(q), ok:true, flag:true}, ...distract(q, hard ? 5 : 3, P.length > 8 ? P : C.filter(d => d.sov), d => d.c2).map(d => ({html:flagImg(d), ok:false, flag:true}))]),
+    typed: hard && fwd ? 'Type a country' : null, typedItems: () => C,
+    check: (q, d) => d.id === q.id, after: q => q.n,
+    onShow: (q, answered) => { map.clear('sel'); map.clearLabels(); if (answered){ map.cls(q.id, 'sel'); map.label(q, q.n); map.focus([q], 6); } else map.reset(); }
+  });
+  panel.firstElementChild.after(dirToggle('flagDir', [['flag2c', 'Flag → Country'], ['c2flag', 'Country → Flag']]));
+}
+
+// ---- Atlas (true size + facts) ----
+function infoHTML(d){
+  if (!d) return '';
+  const area = d.a || d.garea, nb = (d.b || []).map(id => BY.get(id)).filter(Boolean);
+  return `<div class="info"><div class="head">${flagImg(d)}<div><h3>${esc(d.n)}</h3>${d.o && d.o !== d.n ? `<div class="off">${esc(d.o)}</div>` : ''}</div></div>
+    <dl class="kv"><dt>Capital</dt><dd>${esc(d.cap.join(', ') || '–')}</dd>
+    ${d.type === 'country' ? `<dt>Region</dt><dd>${esc(d.sr || d.r)}</dd>` : '<dt>Country</dt><dd>United States</dd>'}
+    <dt>Area</dt><dd class="num">${fmt(area)} km² · ${fmt(area*KM2MI)} mi²</dd>
+    ${d.lang?.length ? `<dt>Languages</dt><dd>${esc(d.lang.slice(0,4).join(', '))}</dd>` : ''}
+    ${d.cur?.length ? `<dt>Currency</dt><dd>${esc(d.cur.join(', '))}</dd>` : ''}
+    ${d.type === 'country' ? `<dt>Coast</dt><dd>${d.ll ? 'Landlocked' : 'Has a coastline'}</dd>` : ''}</dl>
+    ${nb.length ? `<div><p class="lab">Borders ${nb.length}</p><div class="chips">${nb.map(n => `<button type="button" class="chip" data-id="${n.id}">${esc(n.n)}</button>`).join('')}</div></div>` : `<p class="note">No land borders${d.type === 'country' ? ' with other countries' : ''}.</p>`}</div>`;
+}
+function modeAtlas(){
+  const A = Object.assign({base:'USA', ov:'GBR', x:W/2, y:H/2, rot:0, zoom:1, info:'GBR'}, store.get('aa-atlas', {}));
+  const save = () => store.set('aa-atlas', {base:A.base, ov:A.ov, info:A.info});
+  panel.innerHTML = head('Atlas', 'See any country at its true size on top of another place, and tap any country for its facts.') +
+    `<div><p class="lab">Overlay (drag it)</p><div id="gov"></div></div>
+     <div><p class="lab">On top of</p><div id="gbase"></div></div>
+     <div class="verdict" id="verdict"></div>
+     <div class="ctl"><label for="rot">Rotate</label><input id="rot" type="range" min="-180" max="180" value="0"><output id="rotv">0°</output></div>
+     <div class="ctl"><label for="zm">Zoom</label><input id="zm" type="range" min="15" max="300" value="100"><output id="zmv">100%</output></div>
+     <div class="row"><button class="btn" id="ctr" type="button">Center overlay</button><button class="btn" id="swap" type="button">Swap</button></div>
+     <div id="info"></div>`;
+  const overlayItems = () => [...C, ...US];
+  makeGuess($('#gov'), {placeholder:'Overlay: ' + BY.get(A.ov).n, items:overlayItems, sub:d => d.type === 'state' ? 'US state' : '', onPick:d => { A.ov = d.id; A.x = W/2; A.y = H/2; A.rot = 0; save(); fitZoom(); drawAll(); setPH(); }});
+  makeGuess($('#gbase'), {placeholder:'Base: ' + BY.get(A.base).n, items:() => C, onPick:d => { A.base = d.id; A.x = W/2; A.y = H/2; save(); fitZoom(); drawAll(); setPH(); }});
+  function setPH(){ $('#gov input').placeholder = 'Overlay: ' + BY.get(A.ov).n; $('#gbase input').placeholder = 'Base: ' + BY.get(A.base).n; }
+  const svg = d3.select(stage).append('svg').attr('class','map').attr('viewBox',`0 0 ${W} ${H}`).attr('aria-label','True size comparison map');
+  svg.append('rect').attr('class','water').attr('width',W).attr('height',H).style('fill','var(--bg)');
+  const gSph = svg.append('path').attr('class','sphere'), gGrat = svg.append('path').attr('class','grat');
+  const gC = svg.append('g'), gS = svg.append('g');
+  const ov = svg.append('g').attr('id','ov').attr('tabindex',0).attr('aria-label','Overlay shape. Drag, or use arrow keys.');
+  const ovp = ov.append('path'), ovt = ov.append('text');
+  stage.insertAdjacentHTML('beforeend', '<div class="hint-line">Drag the red shape. Tap any country for facts.</div>');
+  let scale0 = 1;
+  function baseProj(){ const b = BY.get(A.base); const p = d3.geoAzimuthalEqualArea().rotate([-b.cen[0], -b.cen[1]]).clipAngle(90).fitExtent([[W*.2,H*.18],[W*.8,H*.82]], b.ft); scale0 = p.scale(); return p.scale(scale0 * A.zoom).translate([W/2, H/2]); }
+  function fitZoom(){ const o = BY.get(A.ov), b = BY.get(A.base); baseProj();
+    const op = d3.geoAzimuthalEqualArea().rotate([-o.cen[0], -o.cen[1]]).scale(scale0).translate([0,0]); const bb = d3.geoPath(op).bounds(o.ft);
+    const z = Math.min(1, (W*.9)/(bb[1][0]-bb[0][0]), (H*.85)/(bb[1][1]-bb[0][1])); A.zoom = Math.max(.15, Math.round(z*100)/100); }
+  function drawAll(){
+    const p = baseProj(), path = d3.geoPath(p);
+    gSph.attr('d', path({type:'Sphere'})); gGrat.attr('d', path(d3.geoGraticule10()));
+    gC.selectAll('path').data(C, d => d.id).join('path').attr('class', d => 'f act' + (d.id === A.base ? ' base' : '') + (d.id === A.info ? ' sel' : '')).attr('d', d => path(d.f))
+      .on('click', (e,d) => { A.info = d.id; save(); showInfo(); drawAll(); });
+    gS.selectAll('path').data(A.base === 'USA' ? US : [], d => d.id).join('path').attr('class','stl').attr('d', d => path(d.f));
+    const o = BY.get(A.ov); const op = d3.geoAzimuthalEqualArea().rotate([-o.cen[0], -o.cen[1]]).scale(p.scale()).translate([0,0]).clipAngle(90);
+    const opath = d3.geoPath(op); ovp.attr('d', opath(o.ft)); const bb = opath.bounds(o.ft); ovt.text(o.n).attr('x', 0).attr('y', Math.min(bb[0][1] - 10, -12));
+    place(); verdict();
+    $('#rot').value = A.rot; $('#rotv').textContent = A.rot + '°'; $('#zm').value = Math.round(A.zoom*100); $('#zmv').textContent = Math.round(A.zoom*100) + '%';
+  }
+  function place(){ ov.attr('transform', `translate(${A.x},${A.y}) rotate(${A.rot})`); ovt.attr('transform', `rotate(${-A.rot})`); }
+  function verdict(){ const o = BY.get(A.ov), b = BY.get(A.base); const r = o.garea / b.garea;
+    let s = r >= 1 ? `<b>${esc(o.n)}</b> is <b>${r.toFixed(r < 10 ? 2 : 0)}×</b> the size of ${esc(b.n)}.` : `<b>${esc(o.n)}</b> is <b>${(r*100).toFixed(r < .01 ? 2 : 0)}%</b> the size of ${esc(b.n)}.`;
+    const st = US.slice().sort((x,y) => Math.abs(Math.log(o.garea/x.garea)) - Math.abs(Math.log(o.garea/y.garea)))[0];
+    if (o.type === 'country') s += ` Closest US state in size: ${esc(st.n)} (${(o.garea/st.garea).toFixed(2)}×).`;
+    $('#verdict').innerHTML = s; }
+  function showInfo(){ $('#info').innerHTML = infoHTML(BY.get(A.info)) + `<div class="row" style="margin-top:8px"><button class="btn" type="button" id="useov">Use as overlay</button><button class="btn" type="button" id="usebase">Use as base</button></div>`;
+    $('#useov').onclick = () => { A.ov = A.info; A.x = W/2; A.y = H/2; A.rot = 0; save(); fitZoom(); drawAll(); setPH(); };
+    $('#usebase').onclick = () => { if (BY.get(A.info).type !== 'country') return; A.base = A.info; save(); fitZoom(); drawAll(); setPH(); };
+    $('#info').querySelectorAll('.chip[data-id]').forEach(b => b.onclick = () => { A.info = b.dataset.id; save(); showInfo(); drawAll(); }); }
+  $('#rot').oninput = e => { A.rot = +e.target.value; $('#rotv').textContent = A.rot + '°'; place(); };
+  $('#zm').oninput = e => { const nz = +e.target.value/100, k = nz/A.zoom; A.x = W/2 + (A.x - W/2)*k; A.y = H/2 + (A.y - H/2)*k; A.zoom = nz; drawAll(); };
+  $('#ctr').onclick = () => { A.x = W/2; A.y = H/2; place(); };
+  $('#swap').onclick = () => { if (BY.get(A.ov).type !== 'country') return toast('Base must be a country'); [A.ov, A.base] = [A.base, A.ov]; A.x = W/2; A.y = H/2; save(); fitZoom(); drawAll(); setPH(); };
+  const pt = e => { const p = svg.node().createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.node().getScreenCTM().inverse()); };
+  let dr = null;
+  ov.on('pointerdown', e => { const p = pt(e); dr = {dx:p.x - A.x, dy:p.y - A.y}; ov.classed('drag', true); ov.node().setPointerCapture(e.pointerId); e.stopPropagation(); });
+  ov.on('pointermove', e => { if (!dr) return; const p = pt(e); A.x = p.x - dr.dx; A.y = p.y - dr.dy; place(); });
+  ov.on('pointerup pointercancel', () => { dr = null; ov.classed('drag', false); });
+  ov.on('keydown', e => { const s = e.shiftKey ? 30 : 8, k = {ArrowLeft:[-s,0],ArrowRight:[s,0],ArrowUp:[0,-s],ArrowDown:[0,s]}[e.key]; if (!k) return; e.preventDefault(); A.x += k[0]; A.y += k[1]; place(); });
+  fitZoom(); drawAll(); showInfo();
+}
+
+// ---- Players scoreboard ----
+const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags']];
+function modePlayers(){
+  const items = universe(S.set).filter(d => inSet(d, S.set));
+  const all = PLAYERS.map(p => { const st = store.get('aa-stats:' + p, {});
+    const kn = m => items.filter(d => { const v = st[m+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length;
+    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : kn(m));
+    const ans = Object.values(st).reduce((a,v) => a + v[0] + v[1], 0), right = Object.values(st).reduce((a,v) => a + v[0], 0);
+    return {p, cols, total:cols.reduce((a,b) => a+b, 0), ans, acc: ans ? Math.round(right/ans*100) : 0}; });
+  const best = BOARD.map((_,i) => Math.max(...all.map(r => r.cols[i])));
+  const top = Math.max(...all.map(r => r.total));
+  all.sort((a,b) => b.total - a.total);
+  panel.innerHTML = head('Players', `Who knows ${esc(SETS[S.set])} best. "Known" means answered right at least twice and more often than missed. Chains counts chains solved.`) +
+    `<div class="row"><button class="btn primary" type="button" id="addp">Add player</button></div>
+     <div><p class="lab">Playing as</p><div class="chips">${PLAYERS.map(p => `<button type="button" class="chip${p === S.player ? ' on' : ''}" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div></div>
+     <p class="note">Progress is saved in this browser. Each device keeps its own players.</p>`;
+  $('#addp').onclick = () => renderPlayers(true);
+  panel.querySelectorAll('[data-p]').forEach(b => b.onclick = () => switchPlayer(b.dataset.p));
+  stage.style.background = 'var(--panel)';
+  stage.innerHTML = `<div style="padding:16px" class="scroll"><table class="board"><thead><tr><th>Player</th>${BOARD.map(b => `<th>${b[1]}</th>`).join('')}<th>Total</th><th>Accuracy</th></tr></thead><tbody>${
+    all.map(r => `<tr class="${r.p === S.player ? 'me' : ''}"><td>${esc(r.p)}${r.total === top && top > 0 ? ' ★' : ''}</td>${r.cols.map((c,i) => `<td class="${c === best[i] && c > 0 ? 'lead' : ''}">${c}</td>`).join('')}<td>${r.total}</td><td>${r.ans ? r.acc + '%' : '–'}</td></tr>`).join('')
+  }</tbody></table><p class="note" style="margin-top:12px">Out of ${items.length} ${S.set === 'us' ? 'states' : 'countries'} per column at the current map. Switch the map above to compare another region.</p></div>`;
+  return () => { stage.style.background = ''; };
+}
+
+// ---------- boot ----------
+shell();
+Promise.all(['data/world.json','data/states.json'].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.json(); })))
+  .then(([w, s]) => {
+    C = w.map(d => prep(d, 'country')).sort((a,b) => a.n.localeCompare(b.n));
+    US = s.map(d => prep(d, 'state')).sort((a,b) => a.n.localeCompare(b.n));
+    route();
+  })
+  .catch(err => { panel.innerHTML = `<p>Could not load the map data (${esc(err.message)}). Reload the page to try again.</p>`; });
+</script>
