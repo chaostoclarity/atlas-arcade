@@ -37,14 +37,14 @@
   --water:#0b2230; --sphere:#0f2d3d; --land:#2d4038; --ctx:#26342e; --stroke:#7d9a8b;
   --act:#3f5e49; --act-hover:#6b6a2a;
   --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
-  --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
+  --good:#69db7c; --good-fill:#2f9e44; --bad:#ff8ab0; --bad-fill:#a61e4d; --hint:#ffc078; --hint-fill:#d9480f;
   --halo:#0e171d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e171d; --panel:#15222b; --ink:#e4edf1; --muted:#93a6b1; --line:#283a45;
   --water:#0b2230; --sphere:#0f2d3d; --land:#2d4038; --ctx:#26342e; --stroke:#7d9a8b;
   --act:#3f5e49; --act-hover:#6b6a2a;
   --accent:#7aa2ff; --accent-ink:#0b1430; --accent-soft:#1d2d55;
-  --good:#69db7c; --good-fill:#2f7a3e; --bad:#ff8ab0; --bad-fill:#8e2a4f; --hint:#ffc078; --hint-fill:#8a5414;
+  --good:#69db7c; --good-fill:#2f9e44; --bad:#ff8ab0; --bad-fill:#a61e4d; --hint:#ffc078; --hint-fill:#d9480f;
   --halo:#0e171d; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
@@ -513,6 +513,7 @@ const RULES = {
     'Start in one blue country and reach the other, crossing land borders only.',
     'Type countries that link them. Each one must touch the chain on the map.',
     'Example: France to Poland works through Germany, because France touches Germany and Germany touches Poland.',
+    'Only the main part of each country counts. Cut-off pieces, like Russia\'s Kaliningrad next to Poland, don\'t.',
     'Green means the country is on a shortest route. Orange means it connects, but the long way.',
     'You win when your countries form an unbroken path. Guesses are limited, so plan ahead.',
     'Hint fills in one link and costs a guess.']},
@@ -551,7 +552,7 @@ function maybeRules(mode){
 // Clues shared by Shape and Hot & Cold
 function clues(d){
   const big = US.slice().sort((x,y) => Math.abs(Math.log(d.garea/x.garea)) - Math.abs(Math.log(d.garea/y.garea)))[0];
-  const nb = (d.b || []).length;
+  const nb = (d.b0 || d.b || []).length;
   const sizeClue = d.type === 'state' ? `About ${Math.round(d.garea / BY.get('TX').garea * 100)}% the size of Texas` : (big.id === d.id ? '' : `About the size of ${big.n} (a US state)`);
   return (d.type === 'country' ? [
     `It's in ${d.sr || d.r}`, sizeClue,
@@ -792,7 +793,7 @@ const SAMPLES = new Map();
 function samples(d){ if (SAMPLES.has(d.id)) return SAMPLES.get(d.id); const pts = [];
   (function walk(c){ if (typeof c[0] === 'number') pts.push(c); else c.forEach(walk); })(d.ft.geometry.coordinates);
   const step = Math.max(1, Math.ceil(pts.length/140)); const s = pts.filter((_,i) => i % step === 0); SAMPLES.set(d.id, s); return s; }
-function gap(a, b){ if (a.id === b.id) return 0; if (a.b?.includes(b.id) || b.b?.includes(a.id)) return 0;
+function gap(a, b){ if (a.id === b.id) return 0; if ((a.b0 || a.b)?.includes(b.id) || (b.b0 || b.b)?.includes(a.id)) return 0;
   const A = samples(a), B = samples(b); let m = Infinity; for (const p of A) for (const q of B){ const d = d3.geoDistance(p,q); if (d < m) m = d; } return m * R; }
 function makeGlobe(host, {items, center=[0,20]}){
   fitH();
@@ -891,7 +892,7 @@ function modeChain(){
     if (linked()) end(true); else if (used >= MAXG) end(false);
   }
   const gi = makeGuess($('#gin'), {placeholder: S.set === 'us' ? 'Type a state' : 'Type a country', items:() => U.filter(d => !guessed.includes(d) && d !== A && d !== B), onPick:d => guess(d)});
-  map = makeMap(stage, {fit:path0, onPick: tapOK ? (d => guess(d)) : null, active: tapOK ? new Set(U.map(d => d.id)) : new Set()});
+  map = makeMap(stage, {fit:path0, onPick: tapOK ? (d => guess(d)) : null, active: tapOK ? new Set(U.filter(d => d.type === 'state' || (d.sov && d.b.length)).map(d => d.id)) : new Set()});
   map.cls(A.id, 'endpt'); map.cls(B.id, 'endpt'); map.label(A, A.n, 'end'); map.label(B, B.n, 'end');
   $('#hint').onclick = () => { const n = path0.slice(1,-1).find(d => !guessed.includes(d)) || U.find(d => onPath(d) && !guessed.includes(d) && d !== A && d !== B); if (n) guess(n, true); };
   $('#give').onclick = () => end(false); $('#nxt').onclick = () => route();
@@ -992,7 +993,7 @@ function modeFlags(preset){
 // ---- Atlas (true size + facts) ----
 function infoHTML(d){
   if (!d) return '';
-  const area = d.a || d.garea, nb = (d.b || []).map(id => BY.get(id)).filter(Boolean);
+  const area = d.a || d.garea, nb = (d.b0 || d.b || []).map(id => BY.get(id)).filter(Boolean);
   return `<div class="info"><div class="head">${flagImg(d)}<div><h3>${esc(d.n)}</h3>${d.o && d.o !== d.n ? `<div class="off">${esc(d.o)}</div>` : ''}</div></div>
     <dl class="kv"><dt>Capital</dt><dd>${esc(d.cap.join(', ') || '–')}</dd>
     ${d.type === 'country' ? `<dt>Region</dt><dd>${esc(d.sr || d.r)}</dd>` : '<dt>Country</dt><dd>United States</dd>'}
