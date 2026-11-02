@@ -331,7 +331,13 @@ const MODES = [
 ];
 const SETS = {world:'World',africa:'Africa',asia:'Asia',europe:'Europe',namerica:'North & Central America',samerica:'South America',oceania:'Oceania',us:'US States'};
 const BOX = {africa:[-19,-36,52,38],asia:[26,-10,146,55],europe:[-25,34,45,71],namerica:[-168,6,-52,72],samerica:[-82,-56,-34,13],oceania:[112,-48,180,-1]};
-const EASY = new Set('GBR KOR PRK ISR GRC PRT NLD CHE IRL CUB NZL BEL AUT DNK JAM PAN CRI LBN SGP TWN QAT HTI DOM NPL LKA BGD VNM PHL SYR JOR ARE UKR POL ITA ESP DEU JPN ROU HUN CZE URY ECU GTM HND NIC SLV BLZ ISL KHM LAO SEN GHA UGA TUN'.split(' '));
+// Difficulty = how well known a place is, not how big it is.
+// Easy: household names. Medium: places most adults have heard of. Hard: everything else.
+const EASY = new Set('USA CAN MEX BRA ARG CHL PER COL VEN CUB JAM GBR IRL FRA DEU ITA ESP PRT NLD BEL CHE AUT GRC POL SWE NOR FIN DNK ISL RUS UKR TUR EGY ZAF NGA KEN ETH MAR MDG IND CHN JPN KOR PRK VNM THA PHL IDN PAK AFG IRN IRQ SAU ISR AUS NZL'.split(' '));
+const MED = new Set('HUN CZE SVK ROU BGR SRB HRV BIH SVN ALB EST LVA LTU BLR GEO ARM AZE KAZ UZB MNG LUX MLT MCO VAT CYP KWT QAT ARE OMN YEM JOR LBN SYR PSE MYS SGP KHM LAO MMR NPL BGD LKA TWN DZA TUN LBY SDN SOM TZA UGA RWA GHA SEN CIV CMR COD AGO ZMB ZWE MOZ NAM BWA BOL ECU URY PRY GTM HND NIC CRI PAN SLV DOM HTI BHS PNG FJI'.split(' '));
+const US_EASY = new Set('CA TX FL NY AK HI WA OR AZ NV CO IL MI MA GA LA'.split(' '));
+const US_MED = new Set('PA OH NC VA NJ TN MN WI NM MT UT MO KY AL SC ID MD OK'.split(' '));
+const tier = d => d.type === 'state' ? (US_EASY.has(d.id) ? 1 : US_MED.has(d.id) ? 2 : 3) : (EASY.has(d.id) ? 1 : MED.has(d.id) ? 2 : 3);
 
 // ---------- storage ----------
 const store = {
@@ -400,11 +406,10 @@ function inSet(d, set){
 }
 function pool(set = S.set, diff = S.diff){
   const all = universe(set).filter(d => inSet(d, set));
-  if (set === 'us') return all;
-  const m0 = all.filter(d => d.a >= 10000 || EASY.has(d.id)), med = m0.length >= 6 ? m0 : all;
-  if (diff === 'easy') { const e = all.filter(d => d.a >= 250000 || EASY.has(d.id)); return e.length >= 6 ? e : med; }
-  if (diff === 'medium') return med;
-  return all;
+  // Medium includes Easy, Hard includes everything. Small regions borrow from the next level so a round has enough places.
+  let lvl = {easy:1, medium:2, hard:3}[diff], out = all.filter(d => tier(d) <= lvl);
+  while (out.length < 6 && lvl < 3){ lvl++; out = all.filter(d => tier(d) <= lvl); }
+  return out;
 }
 
 // ---------- shell ----------
