@@ -519,7 +519,8 @@ const RULES = {
     'Hint fills in one link and costs a guess.']},
   capitals:{title:'Capitals', goal:'Match countries with their capital cities.', steps:[
     'Pick a direction at the top: Country → Capital, or Capital → Country.',
-    'Easy and Medium: tap one of four answers. Hard: type it, and small typos are fine.',
+    'Easy and Medium: tap one of four. Watch out: the choices include big cities that are not the capital (Sydney for Australia), and capitals of nearby countries.',
+    'Hard: type the answer. Small typos are fine.',
     'The map shows where the country is, with country names on it.',
     'A right answer moves on by itself. After a wrong one, read the answer and tap Next.',
     'Ten per round. Countries you miss come back more often.']},
@@ -904,6 +905,32 @@ function modeChain(){
 }
 
 // ---- shared Q&A engine for Capitals and Flags ----
+// Tricky answer choices for Capitals: the place's own big cities, plus capitals of
+// same-language and nearby places. Madrid comes with Barcelona, Lisbon and Buenos Aires.
+function nearestTo(q, src, n, filt = () => true){
+  return src.filter(d => d !== q && filt(d)).sort((a,b) => d3.geoDistance(a.pt, q.pt) - d3.geoDistance(b.pt, q.pt)).slice(0, n);
+}
+const sameLang = (a, b) => (a.lang || []).some(l => (b.lang || []).includes(l));
+function capChoices(q){
+  const src = q.type === 'state' ? US : C.filter(d => d.sov && d.cap?.length);
+  const opts = [{html:esc(q.cap[0]), ok:true}], seen = new Set(q.cap.map(norm));
+  const add = s => { if (s && opts.length < 4 && !seen.has(norm(s))){ seen.add(norm(s)); opts.push({html:esc(s), ok:false}); } };
+  const nCity = S.diff === 'easy' ? 1 : (q.type === 'state' || Math.random() < .5 ? 2 : 1);
+  (q.big || []).slice(0, nCity).forEach(add);
+  if (q.type === 'country'){ const L = shuffle(nearestTo(q, src, 4, d => sameLang(d, q))); if (L.length) add(L[0].cap[0]); }
+  shuffle(nearestTo(q, src, 5)).forEach(d => add(d.cap[0]));
+  nearestTo(q, src, 20).forEach(d => add(d.cap[0]));
+  return shuffle(opts);
+}
+function placeChoices(q){
+  const src = q.type === 'state' ? US : C.filter(d => d.sov);
+  const opts = [q];
+  const add = d => { if (d && opts.length < 4 && !opts.includes(d)) opts.push(d); };
+  if (q.type === 'country') shuffle(nearestTo(q, src, 4, d => sameLang(d, q))).slice(0, 1).forEach(add);
+  shuffle(nearestTo(q, src, 5)).forEach(add);
+  nearestTo(q, src, 20).forEach(add);
+  return shuffle(opts.map(d => ({html:esc(d.n), ok:d === q})));
+}
 function distract(q, n, src, key){
   const same = shuffle(src.filter(d => d !== q && (q.type === 'state' || d.r === q.r) && key(d) && key(d) !== key(q)));
   const rest = shuffle(src.filter(d => d !== q && !same.includes(d) && key(d)));
@@ -957,8 +984,7 @@ function modeCapitals(preset){
   quizRound({mode:'cap-' + S.capDir, title:'Capitals', P, items, redo:modeCapitals,
     how: fwd ? `Name the capital. ${hard ? 'Type it; small typos are fine.' : 'Pick one of four.'}` : `Which ${S.set === 'us' ? 'state' : 'country'} is this the capital of?`,
     askHTML: q => fwd ? `<div class="prompt"><small>Capital of</small><strong>${esc(q.n)}</strong></div>` : `<div class="prompt"><small>${S.set === 'us' ? 'State' : 'Country'} with the capital</small><strong>${esc(q.cap[0])}</strong></div>`,
-    choicesFor: q => fwd ? shuffle([{html:esc(q.cap[0]), ok:true}, ...distract(q, 3, P.length > 6 ? P : U, d => d.cap?.[0]).map(d => ({html:esc(d.cap[0]), ok:false}))])
-                         : shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, P.length > 6 ? P : U, d => d.n).map(d => ({html:esc(d.n), ok:false}))]),
+    choicesFor: q => fwd ? capChoices(q) : placeChoices(q),
     typed: hard ? (fwd ? 'Type the capital' : (S.set === 'us' ? 'Type a state' : 'Type a country')) : null,
     typedItems: hard && !fwd ? () => U : null,
     check: (q, a) => fwd ? q.cap.some(c => close(a, c)) : a.id === q.id,
