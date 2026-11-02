@@ -392,6 +392,7 @@ const MODES = [
   {id:'capitals', name:'Capitals', sub:'Cities and countries'},
   {id:'flags', name:'Flags', sub:'Know the colors'},
   {id:'nature', name:'Nature', sub:'Rivers, peaks, seas'},
+  {id:'trivia', name:'Trivia', sub:'Sunset Trivia questions'},
   {id:'players', name:'Players', sub:'Scoreboard'},
 ];
 const ICON = {
@@ -404,6 +405,7 @@ const ICON = {
   capitals:'<path d="M4 21h16M5 21V10l7-5 7 5v11M9 21v-6h6v6"/>',
   flags:'<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
   nature:'<path d="M2 20l7-12 4 6 3-4 6 10z"/><path d="M8.5 9l1.5 2"/>',
+  trivia:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',
   players:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>'
 };
 const SETS = {world:'World',africa:'Africa',asia:'Asia',europe:'Europe',namerica:'North & Central America',samerica:'South America',oceania:'Oceania',us:'US States'};
@@ -421,12 +423,12 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1', natFmt:'find', natType:'all', layer:'map'}, store.get('aa-prefs', {}));
+const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1', natFmt:'find', natType:'all', layer:'map', trivCat:'both'}, store.get('aa-prefs', {}));
 let PLAYERS = store.get('aa-players', null);
 if (!PLAYERS){ PLAYERS = ['Player 1']; const old = store.get('aa-stats', null); if (old) store.set('aa-stats:Player 1', old); store.set('aa-players', PLAYERS); }
 if (!PLAYERS.includes(S.player)) S.player = PLAYERS[0];
 let ST = store.get('aa-stats:' + S.player, {});
-const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType, layer:S.layer});
+const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType, layer:S.layer, trivCat:S.trivCat});
 function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
 function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
 function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.min(3, Math.max(.3, 1 + v[1] - .5*v[0])) : 1.5; }
@@ -538,6 +540,7 @@ function route(){
   document.querySelectorAll('#diff button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === S.diff));
   $('#set').value = S.set;
   $('#pickers').classList.toggle('off', mode === 'atlas');
+  $('#set').hidden = mode === 'trivia'; document.querySelector('label[for="set"]').hidden = mode === 'trivia';
   $('#set').disabled = false;
   document.querySelector('.main').dataset.mode = mode;
   document.querySelector('.main').dataset.set = S.set;
@@ -546,7 +549,7 @@ function route(){
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
   setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode), 50);
-  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
@@ -617,6 +620,12 @@ const RULES = {
     'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
     'After you answer, the map shows where that country is.',
     'Ten per round. Flags you miss come back more often.']},
+  trivia:{title:'Trivia', goal:'Answer geography questions from Sunset Trivia.', steps:[
+    'Pick World, US States, or Both at the top of the panel.',
+    'Easy and Medium: tap one of four answers. Hard: type the answer. Small typos and common alternate names are fine.',
+    'After each answer you get a short fact, and the map shows the place when there is one.',
+    'Difficulty follows the original rounds: Easy is rounds 1 and 2, Medium adds 3 and 4, Hard is everything.',
+    'Ten questions per round. Ones you miss come back more often.']},
   'nature-find':{title:'Nature: Find It', goal:'Find rivers, mountains, seas and more on the map.', steps:[
     'Use the Type menu to pick rivers, lakes, seas, mountains, deserts, landforms, peaks or islands, or play them all.',
     'We name a feature, like "the Danube". Tap it on the map. Only that kind of feature is shown, so for a river you see just the rivers.',
@@ -1470,13 +1479,70 @@ function natTrace(preset){
   panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
 }
 
+// ---- Trivia (Geography and US States questions from Sunset Trivia) ----
+let TRIV = null;
+function placeFor(s){
+  const k = norm(s); if (!k) return null;
+  for (const d of [...C, ...US]) if ([d.n, d.o, ...(d.alt || [])].some(x => norm(x) === k)) return {d, cap:false};
+  for (const d of [...C.filter(x => x.sov), ...US]) if ((d.cap || []).some(x => norm(x) === k)) return {d, cap:true};
+  return null;
+}
+function natureFor(s){
+  if (!NAT) return null;
+  const k = norm(s), strip = x => norm(x).replace(/(river|mountains|mountain|desert|sea|lake|ocean|range|island|islands)$/,'').replace(/^(mount|lake)/,'');
+  return NAT.find(f => norm(f.n) === k) || NAT.find(f => strip(f.n) && strip(f.n) === strip(s)) || null;
+}
+function modeTrivia(preset){
+  panel.innerHTML = '<div class="loading">Loading trivia…</div>';
+  let alive = true;
+  loadNature().catch(() => null);
+  (TRIV ? Promise.resolve(TRIV) : fetch('data/trivia.json').then(r => { if (!r.ok) throw new Error('trivia'); return r.json(); }).then(a => TRIV = a))
+    .then(() => { if (alive) triviaRound(preset); })
+    .catch(() => { panel.innerHTML = '<p>Could not load the trivia questions. Reload the page to try again.</p>'; });
+  return () => { alive = false; };
+}
+function triviaRound(preset){
+  panel.innerHTML = ''; stage.innerHTML = '';
+  const lvl = {easy:1, medium:2, hard:3}[S.diff];
+  const P = TRIV.filter(q => (S.trivCat === 'both' || q.c === S.trivCat) && q.t <= lvl);
+  const items = preset || pickN('trivia', P, Math.min(10, P.length));
+  const hard = S.diff === 'hard';
+  let map = null, mapSet = null;
+  const mapFor = q => { const want = q.c === 'us' ? 'us' : 'world';
+    if (want !== mapSet){ stage.innerHTML = ''; map = makeMap(stage, {set:want, items:universe(want)}); mapSet = want; }
+    return map; };
+  quizRound({mode:'trivia', title:'Trivia', P, items, redo:triviaRound,
+    how: hard ? 'Type your answer. Small typos are fine.' : 'Pick the right answer.',
+    askHTML: q => `<div class="prompt"><small>${q.c === 'us' ? 'US States' : 'Geography'}${q.p ? ' · ' + esc(q.p) : ''}</small><strong style="font-size:clamp(18px,2.4vw,22px);line-height:1.3;font-family:var(--body);font-weight:700">${esc(q.q)}</strong></div>`,
+    choicesFor: q => shuffle([{html:esc(q.a), ok:true}, ...q.ch.map(c => ({html:esc(c), ok:false}))]),
+    typed: hard ? 'Type your answer' : null,
+    check: (q, v) => [q.a, ...q.alt].some(a => close(v, a)),
+    after: q => q.a,
+    onShow: (q, answered) => {
+      const m = mapFor(q);
+      if (!answered){ m.clear('sel'); m.clearLabels(); m.natG.selectAll('*').remove(); m.reset(); return; }
+      if (q.ex) $('#ans').insertAdjacentHTML('beforeend', `<p class="note" style="font-size:15px;color:var(--ink);margin-top:10px">${esc(q.ex)}</p>`);
+      const hit = placeFor(q.a) || q.alt.map(placeFor).find(Boolean);
+      if (hit){ m.cls(hit.d.id, 'sel'); m.label(hit.d, hit.cap ? `${q.a} (${hit.d.n})` : hit.d.n); m.focus([hit.d], 6); return; }
+      const nf = natureFor(q.a) || q.alt.map(natureFor).find(Boolean);
+      if (nf){ const nat = drawNature(m, [nf], null); nat.cls(nf.id, 'ok'); m.label(nf, nf.n); m.focus([nf], nf.isPt ? 5 : 6); }
+    }
+  });
+  const seg = document.createElement('div'); seg.className = 'seg'; seg.setAttribute('role','group'); seg.setAttribute('aria-label','Question set');
+  seg.innerHTML = [['world','World'],['us','US States'],['both','Both']].map(([v,l]) => `<button type="button" data-v="${v}" aria-pressed="${S.trivCat === v}">${l}</button>`).join('');
+  seg.onclick = e => { const v = e.target.dataset.v; if (!v) return; S.trivCat = v; saveS(); route(); };
+  panel.firstElementChild.after(seg);
+  const mt = panel.querySelector('.meter span'); if (mt) mt.innerHTML = mt.innerHTML.replace(/ in .*$/, ' questions at this level');
+}
+
 // ---- Players scoreboard ----
-const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags']];
+const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags'],['nat-','Nature'],['trivia','Trivia']];
 function modePlayers(){
   const items = universe(S.set).filter(d => inSet(d, S.set));
   const all = PLAYERS.map(p => { const st = store.get('aa-stats:' + p, {});
     const kn = m => items.filter(d => { const v = st[m+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length;
-    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : kn(m));
+    const solved = pre => Object.keys(st).filter(k => k.startsWith(pre) && st[k][0] > 0 && st[k][0] >= st[k][1]).length;
+    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : m === 'nat-' ? solved('nat-') : m === 'trivia' ? solved('trivia:') : kn(m));
     const ans = Object.values(st).reduce((a,v) => a + v[0] + v[1], 0), right = Object.values(st).reduce((a,v) => a + v[0], 0);
     return {p, cols, total:cols.reduce((a,b) => a+b, 0), ans, acc: ans ? Math.round(right/ans*100) : 0}; });
   const best = BOARD.map((_,i) => Math.max(...all.map(r => r.cols[i])));
