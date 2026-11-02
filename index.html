@@ -619,7 +619,7 @@ const RULES = {
     'Ten per round. Flags you miss come back more often.']},
   'nature-find':{title:'Nature: Find It', goal:'Find rivers, mountains, seas and more on the map.', steps:[
     'Use the Type menu to pick rivers, lakes, seas, mountains, deserts, landforms, peaks or islands, or play them all.',
-    'We name a feature, like "the Danube". Tap it on the map. Rivers are blue lines, peaks are triangles.',
+    'We name a feature, like "the Danube". Tap it on the map. Only that kind of feature is shown, so for a river you see just the rivers.',
     'A wrong tap tells you what you hit. After three misses we show you where it is.',
     'Ten per round. Pinch or use + to zoom in on small things.']},
   'nature-label':{title:'Nature: Label It', goal:'Put each name on the right feature.', steps:[
@@ -1317,8 +1317,10 @@ function natTouches(d){
   return `${NVERB[d.type]} ${ns.length > 5 ? ns.slice(0,5).join(', ') + ` and ${ns.length - 5} more` : ns.join(', ')}`;
 }
 function drawNature(map, feats, onPick){
-  const order = ['sea','lake','desert','land','mountain','island','river','peak'];
-  feats = feats.slice().sort((a,b) => order.indexOf(a.type) - order.indexOf(b.type));
+  // Big areas go underneath and small ones on top, then rivers, then peaks, so nothing hides a smaller feature.
+  const rank = d => d.isPt ? 2 : d.isLine ? 1 : 0;
+  const area = d => d._a ?? (d._a = d.isPt || d.isLine ? 0 : d3.geoArea(d.f));
+  feats = feats.slice().sort((a,b) => rank(a) - rank(b) || area(b) - area(a));
   const G = map.natG; G.selectAll('*').remove();
   const sel = G.selectAll('g').data(feats, d => d.id).join('g').attr('class', d => 'nf n-' + d.type + (/Ocean/.test(d.n) ? ' ocean' : ''));
   sel.each(function(d){ const s = d3.select(this);
@@ -1333,6 +1335,8 @@ function drawNature(map, feats, onPick){
     G.selectAll('.pk').attr('d', d3.symbol(d3.symbolTriangle, Math.pow(22 * p / k, 2))()); });
   const pick = id => sel.filter(d => d.id === id);
   return {
+    under(e){ return document.elementsFromPoint(e.clientX, e.clientY).map(el => el.closest && el.closest('.nf')).filter(Boolean).map(g => d3.select(g).datum()); },
+    show(f){ sel.attr('display', d => f(d) ? null : 'none'); },
     cls(id, c, on=true){ pick(id).classed(c, on); },
     clear(c){ sel.classed(c, false); },
     flash(id, c='bad'){ const s = pick(id); s.classed(c, true); setTimeout(() => s.classed(c, false), 650); },
@@ -1345,6 +1349,21 @@ function modeNature(){
   loadNature().then(() => { if (!alive) return; panel.innerHTML = ''; stage.innerHTML = ''; const fn = ({find:natFind, label:natLabel, trace:natTrace})[S.natFmt] || natFind; inner = fn(); })
     .catch(() => { panel.innerHTML = '<p>Could not load the nature data. Reload the page to try again.</p>'; });
   return () => { alive = false; inner?.(); };
+}
+// Pick up to n features whose areas don't overlap (rivers may cross areas, but not share a spot with another river's label).
+function natSpread(list, n){
+  const box = d => d._bb || (d._bb = d3.geoBounds(d.f));
+  const inter = (a, b) => { const A = box(a), B = box(b); const w = Math.min(A[1][0], B[1][0]) - Math.max(A[0][0], B[0][0]), h = Math.min(A[1][1], B[1][1]) - Math.max(A[0][1], B[0][1]);
+    if (w <= 0 || h <= 0) return 0; const aa = Math.max(.01, (A[1][0]-A[0][0]) * (A[1][1]-A[0][1])), bb = Math.max(.01, (B[1][0]-B[0][0]) * (B[1][1]-B[0][1])); return (w*h) / Math.min(aa, bb); };
+  const clash = (a, b) => {
+    if (a.isLine && b.isLine) return d3.geoDistance(a.cen, b.cen) < .05;
+    if (a.isLine || b.isLine) return false;
+    if (a.isPt || b.isPt){ const p = a.isPt ? a : b, o = a.isPt ? b : a; return o.isPt ? d3.geoDistance(p.cen, o.cen) < .03 : d3.geoContains(o.f, p.g.coordinates); }
+    return inter(a, b) > .15 || d3.geoContains(a.f, b.cen) || d3.geoContains(b.f, a.cen);
+  };
+  const out = [];
+  for (const d of list){ if (out.length >= n) break; if (!out.some(o => clash(o, d))) out.push(d); }
+  return out;
 }
 function natControls(){
   const wrap = document.createElement('div'); wrap.className = 'natbar';
@@ -1372,12 +1391,15 @@ function natFind(preset){
   let i = 0, tries = 0, right = 0, busy = false; const misses = []; const tm = timer($('#tm'));
   const map = makeMap(stage, {plain:true});
   const nat = drawNature(map, P, pick);
-  function ask(){ if (i >= items.length) return finish(); tries = 0; $('#q').textContent = items[i].n; $('#qk').textContent = 'Find the ' + NWORD[items[i].type]; $('#qi').textContent = i+1; }
+  function ask(){ if (i >= items.length) return finish(); tries = 0; const q = items[i];
+    $('#q').textContent = q.n; $('#qk').textContent = 'Find the ' + NWORD[q.type]; $('#qi').textContent = i+1;
+    nat.show(d => d.type === q.type); }
   function reveal(){ const q = items[i]; busy = true; misses.push(q); rec('nat-find', q.id, false);
     nat.cls(q.id, 'reveal'); nat.raise(q.id); map.label(q, q.n, 'miss'); map.focus([q], 5);
     setTimeout(() => { nat.cls(q.id, 'reveal', false); nat.cls(q.id, 'meh'); map.reset(); busy = false; i++; ask(); }, 1800); }
-  function pick(d){
+  function pick(d, e){
     if (busy || i >= items.length) return; const q = items[i];
+    if (e && nat.under(e).some(x => x.id === q.id)) d = q;
     if (d.id === q.id){ nat.cls(d.id, tries ? 'meh' : 'ok'); map.label(q, q.n);
       if (!tries){ right++; $('#sc').textContent = right; rec('nat-find', q.id, true); toast('Yes, ' + q.n, 'good'); } else { misses.push(q); rec('nat-find', q.id, false); toast(q.n); }
       i++; ask(); }
@@ -1391,7 +1413,7 @@ function natFind(preset){
 
 function natLabel(preset){
   const P = natPool(); if (!P.length) return natEmpty();
-  const items = preset || pickN('nat-label', P, Math.min(6, P.length));
+  const items = preset || natSpread(pickN('nat-label', P, P.length), 6);
   panel.innerHTML = head('Nature: Label It', 'Tap a name, then tap its feature on the map. Or drag the name onto it.', 'nat-label', P) +
     `<div class="tray" id="tray"></div><div class="stats"><span>Placed <b id="pl">0</b>/${items.length}</span><span>Misses <b id="ms">0</b></span><span>Time <b id="tm">0:00</b></span></div><div id="endh"></div>`;
   panel.prepend(natControls());
@@ -1400,7 +1422,7 @@ function natLabel(preset){
   const tray = $('#tray');
   shuffle(items).forEach(d => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tag'; b.textContent = d.n; b._d = d; b.setAttribute('aria-pressed','false'); tray.appendChild(b); });
   const map = makeMap(stage, {plain:true});
-  const nat = drawNature(map, items, d => { if (selected) check(selected, d); else toast('Tap a name first'); });
+  const nat = drawNature(map, items, (d, e) => { if (!selected) return toast('Tap a name first'); if (e && nat.under(e).some(x => x.id === selected.id)) d = selected; check(selected, d); });
   map.focus(items, 3);
   function setSel(b){ tray.querySelectorAll('.tag').forEach(t => t.setAttribute('aria-pressed', t === b)); selected = b ? b._d : null; }
   function check(item, d){
@@ -1415,8 +1437,8 @@ function natLabel(preset){
     if (!drag.moved && Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 6){ drag.moved = true; drag.ghost = document.createElement('div'); drag.ghost.className = 'ghost'; drag.ghost.textContent = drag.b._d.n; document.body.appendChild(drag.ghost); }
     if (drag.ghost){ drag.ghost.style.left = e.clientX+'px'; drag.ghost.style.top = e.clientY+'px'; } });
   tray.addEventListener('pointerup', e => { if (!drag) return; const dr = drag; drag = null;
-    if (dr.ghost){ dr.ghost.remove(); const el = document.elementFromPoint(e.clientX, e.clientY); const g = el && el.closest && el.closest('.nf');
-      if (g) check(dr.b._d, d3.select(g).datum()); }
+    if (dr.ghost){ dr.ghost.remove(); const hits = nat.under(e);
+      if (hits.length) check(dr.b._d, hits.find(x => x.id === dr.b._d.id) || hits[0]); }
     else setSel(selected === dr.b._d ? null : dr.b); });
   tray.addEventListener('pointercancel', () => { drag?.ghost?.remove(); drag = null; });
   function finish(){ endCard($('#endh'), {right:items.length - missed.size, total:items.length, secs:tm.stop(), misses:items.filter(d => missed.has(d.id)), again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = natLabel(m); }}); }
