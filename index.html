@@ -198,6 +198,24 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .modal ol{margin:4px 0 6px;padding-left:22px;display:grid;gap:8px;font-size:17px;line-height:1.45}
 .modal .btn{width:100%;min-height:52px;font-size:18px}
 .lbl.nm{font-weight:600;fill:var(--muted)}
+.nf .pg{vector-effect:non-scaling-stroke;stroke-width:1.2;cursor:pointer}
+.n-sea .pg{fill:#1c7ed6;fill-opacity:.16;stroke:#1c7ed6;stroke-opacity:.55}
+.n-lake .pg{fill:#339af0;fill-opacity:.9;stroke:#1864ab}
+.n-desert .pg{fill:#f59f00;fill-opacity:.4;stroke:#d9480f;stroke-opacity:.7}
+.n-land .pg{fill:#37b24d;fill-opacity:.3;stroke:#2b8a3e;stroke-opacity:.8}
+.n-mountain .pg{fill:#8d5524;fill-opacity:.42;stroke:#6b3d14;stroke-opacity:.8}
+.n-island .pg{fill:#be4bdb;fill-opacity:.25;stroke:#9c36b5}
+.nf .rv{fill:none;stroke:#1c7ed6;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.nf .hit{fill:none;stroke:transparent;pointer-events:stroke;cursor:pointer;stroke-linecap:round;stroke-linejoin:round}
+.nf .pk{fill:#5c3d1e;stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke;cursor:pointer}
+.nf.ok .pg,.nf.ok .pk{fill:var(--good-fill);fill-opacity:.9;stroke:var(--good)} .nf.ok .rv{stroke:var(--good)}
+.nf.meh .pg,.nf.meh .pk{fill:var(--hint-fill);fill-opacity:.9;stroke:var(--hint)} .nf.meh .rv{stroke:var(--hint)}
+.nf.bad .pg,.nf.bad .pk{fill:var(--bad-fill);fill-opacity:.9;stroke:var(--bad)} .nf.bad .rv{stroke:var(--bad)}
+.nf.reveal .pg,.nf.reveal .pk{fill:var(--hint-fill);fill-opacity:.95;stroke:var(--hint);stroke-width:2.5} .nf.reveal .rv{stroke:var(--hint)}
+.nf.mystery .pg,.nf.mystery .pk{fill:#e8590c;fill-opacity:.55;stroke:#e8590c;stroke-width:2.5} .nf.mystery .rv{stroke:#e8590c}
+.natbar{display:grid;gap:8px}
+.natbar select{width:100%}
+.kind{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 .clues{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .clues li{background:var(--accent-soft);border-radius:10px;padding:9px 12px;font-weight:600}
 .grow.headrow{background:none;padding-block:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
@@ -327,6 +345,7 @@ const MODES = [
   {id:'chain', name:'Border Chain', sub:'Link two places'},
   {id:'capitals', name:'Capitals', sub:'Cities and countries'},
   {id:'flags', name:'Flags', sub:'Know the colors'},
+  {id:'nature', name:'Nature', sub:'Rivers, peaks, seas'},
   {id:'players', name:'Players', sub:'Scoreboard'},
 ];
 const SETS = {world:'World',africa:'Africa',asia:'Asia',europe:'Europe',namerica:'North & Central America',samerica:'South America',oceania:'Oceania',us:'US States'};
@@ -344,12 +363,12 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1'}, store.get('aa-prefs', {}));
+const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1', natFmt:'find', natType:'all'}, store.get('aa-prefs', {}));
 let PLAYERS = store.get('aa-players', null);
 if (!PLAYERS){ PLAYERS = ['Player 1']; const old = store.get('aa-stats', null); if (old) store.set('aa-stats:Player 1', old); store.set('aa-players', PLAYERS); }
 if (!PLAYERS.includes(S.player)) S.player = PLAYERS[0];
 let ST = store.get('aa-stats:' + S.player, {});
-const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player});
+const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType});
 function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
 function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
 function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.min(3, Math.max(.3, 1 + v[1] - .5*v[0])) : 1.5; }
@@ -393,6 +412,15 @@ function prep(d, type){
   BY.set(d.id, d); return d;
 }
 const universe = set => set === 'us' ? US : C;
+function inRegion(d, set){
+  if (set === 'world') return true;
+  if (set === 'africa') return d.r === 'Africa';
+  if (set === 'asia') return d.r === 'Asia';
+  if (set === 'europe') return d.r === 'Europe';
+  if (set === 'oceania') return d.r === 'Oceania';
+  if (set === 'samerica') return d.sr === 'South America';
+  if (set === 'namerica') return ['North America','Central America','Caribbean'].includes(d.sr);
+}
 function inSet(d, set){
   if (set === 'us') return d.type === 'state';
   if (d.type !== 'country' || !d.sov) return false;
@@ -440,7 +468,7 @@ function renderPlayers(adding=false){
     $('#npx').onclick = () => renderPlayers(); $('#np').focus(); return;
   }
   w.innerHTML = `<button type="button" class="helpbtn" id="help" aria-label="How to play">?</button><label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select>`;
-  $('#help').onclick = () => showRules(document.querySelector('.main').dataset.mode || 'find');
+  $('#help').onclick = () => { const m = document.querySelector('.main').dataset.mode || 'find'; showRules(m === 'nature' ? 'nature-' + S.natFmt : m); };
   $('#pl').onchange = e => { if (e.target.value === '__new'){ e.target.value = S.player; renderPlayers(true); } else switchPlayer(e.target.value); };
 }
 let cleanup = null;
@@ -455,12 +483,12 @@ function route(){
   $('#set').disabled = false;
   document.querySelector('.main').dataset.mode = mode;
   document.querySelector('.main').dataset.set = S.set;
-  document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain'].includes(mode) ? 'sheet' : '';
+  document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain','nature'].includes(mode) ? 'sheet' : '';
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
-  setTimeout(() => maybeRules(mode), 50);
-  cleanup = ({atlas:modeAtlas, players:modePlayers, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode), 50);
+  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
@@ -531,6 +559,20 @@ const RULES = {
     'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
     'After you answer, the map shows where that country is.',
     'Ten per round. Flags you miss come back more often.']},
+  'nature-find':{title:'Nature: Find It', goal:'Find rivers, mountains, seas and more on the map.', steps:[
+    'Use the Type menu to pick rivers, lakes, seas, mountains, deserts, landforms, peaks or islands, or play them all.',
+    'We name a feature, like "the Danube". Tap it on the map. Rivers are blue lines, peaks are triangles.',
+    'A wrong tap tells you what you hit. After three misses we show you where it is.',
+    'Ten per round. Pinch or use + to zoom in on small things.']},
+  'nature-label':{title:'Nature: Label It', goal:'Put each name on the right feature.', steps:[
+    'Six features are drawn on the map.',
+    'Tap a name in the tray, then tap its feature on the map. You can also drag the name.',
+    'A correct name sticks. A wrong tap flashes red and counts as a miss.']},
+  'nature-trace':{title:'Nature: Trace It', goal:'Name the highlighted feature.', steps:[
+    'One feature is lit up on the map, and the map zooms to it.',
+    'Easy and Medium: tap one of four names. Hard: type the name.',
+    'Tap Clue to see which countries or states it touches.',
+    'Ten per round. Features you miss come back more often.']},
   players:{title:'Players', goal:'Track who knows the most.', steps:[
     'Each person gets their own player. Switch players at the top of the screen.',
     'A place counts as known once you get it right at least twice, and more often than you miss it.',
@@ -595,9 +637,10 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   const tiny = items.filter(d => active.has(d.id) && path.area(d.ft) < 45 && proj(d.cen));
   const dots = g.append('g').selectAll('circle').data(tiny, d => d.id).join('circle').attr('class','dot act')
     .attr('cx', d => proj(d.cen)[0]).attr('cy', d => proj(d.cen)[1]).attr('r', 7);
+  const natG = g.append('g');
   const nmG = g.append('g');
   const lab = g.append('g');
-  let k = 1;
+  let k = 1; const zcb = [];
   // viewBox units per screen pixel, so labels and tap dots keep a readable size on small screens
   const px = () => W / Math.max(1, svg.node().getBoundingClientRect().width || W);
   const dotR = () => Math.max(7, 5.5 * px()) / Math.sqrt(k), fs = () => 14 * px() / k;
@@ -610,7 +653,7 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   if (onPick){ fp.on('click', (e,d) => onPick(d,e)); dots.on('click', (e,d) => onPick(d,e)); }
   const zb = d3.zoom().scaleExtent([1, 24]).translateExtent([[-W*.2,-H*.2],[W*1.2,H*1.2]]).on('zoom', e => {
     g.attr('transform', e.transform); k = e.transform.k;
-    dots.attr('r', dotR()); lab.selectAll('text').attr('font-size', fs()).attr('stroke-width', fs()/4); updNames();
+    dots.attr('r', dotR()); lab.selectAll('text').attr('font-size', fs()).attr('stroke-width', fs()/4); updNames(); zcb.forEach(f => f(k));
   });
   svg.call(zb).on('dblclick.zoom', null);
   // On tall screens the whole world is a thin strip, so open zoomed in on the middle; pinch or reset to see it all.
@@ -626,7 +669,7 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   host.appendChild(zc);
   const sel = id => [fp.filter(d => d.id === id), dots.filter(d => d.id === id)];
   return {
-    svg, proj, path,
+    svg, proj, path, natG, px, k: () => k, onZoom(f){ zcb.push(f); f(k); },
     cls(id, c, on=true){ sel(id).forEach(s => s.classed(c, on)); },
     clear(c){ fp.classed(c, false); dots.classed(c, false); },
     fill(id, col){ sel(id).forEach(s => s.style('fill', col)); },
@@ -1090,6 +1133,166 @@ function modeAtlas(){
   ov.on('pointerup pointercancel', () => { dr = null; ov.classed('drag', false); });
   ov.on('keydown', e => { const s = e.shiftKey ? 30 : 8, k = {ArrowLeft:[-s,0],ArrowRight:[s,0],ArrowUp:[0,-s],ArrowDown:[0,s]}[e.key]; if (!k) return; e.preventDefault(); A.x += k[0]; A.y += k[1]; place(); });
   fitZoom(); drawAll(); showInfo();
+}
+
+// ---- Nature: rivers, lakes, seas, mountains, deserts, landforms, peaks, islands ----
+let NAT = null;
+const NTYPES = {all:'All features', river:'Rivers', lake:'Lakes', sea:'Seas & oceans', mountain:'Mountains', desert:'Deserts', land:'Landforms', peak:'Peaks', island:'Islands'};
+const NWORD = {river:'river', lake:'lake', sea:'sea or ocean', mountain:'mountain range', desert:'desert', land:'landform', peak:'peak', island:'island'};
+const NVERB = {river:'Flows through', lake:'Borders', sea:'Touches', mountain:'Runs through', desert:'Covers parts of', land:'Covers parts of', peak:'Stands in', island:'Belongs to'};
+function loadNature(){
+  if (NAT) return Promise.resolve(NAT);
+  return fetch('data/nature.json').then(r => { if (!r.ok) throw new Error('nature'); return r.json(); }).then(a => {
+    NAT = a.map(d => { d.f = {type:'Feature', geometry:d.g}; d.ft = d.f; d.isLine = /LineString/.test(d.g.type); d.isPt = d.g.type === 'Point';
+      d.cen = d.isPt ? d.g.coordinates : d.isLine ? natMid(d.g) : d3.geoCentroid(d.f); d.pt = d.cen; d.alt = []; return d; });
+    return NAT; });
+}
+function natMid(g){ const lines = g.type === 'LineString' ? [g.coordinates] : g.coordinates; const L = lines.reduce((a,b) => b.length > a.length ? b : a); return L[Math.floor(L.length/2)]; }
+function natIn(d, set){
+  if (set === 'world') return true;
+  if (set === 'us') return d.s.length > 0;
+  return d.c.some(id => { const c = BY.get(id); return c && inRegion(c, set); });
+}
+function natPool(){
+  const all = NAT.filter(d => natIn(d, S.set) && (S.natType === 'all' || d.type === S.natType));
+  let lvl = {easy:1, medium:2, hard:3}[S.diff], out = all.filter(d => d.tier <= lvl);
+  while (out.length < 6 && lvl < 3){ lvl++; out = all.filter(d => d.tier <= lvl); }
+  return out;
+}
+function natTouches(d){
+  const ids = S.set === 'us' && d.s.length ? d.s : d.c;
+  const ns = ids.map(id => BY.get(id)?.n).filter(Boolean);
+  if (!ns.length) return '';
+  return `${NVERB[d.type]} ${ns.length > 5 ? ns.slice(0,5).join(', ') + ` and ${ns.length - 5} more` : ns.join(', ')}`;
+}
+function drawNature(map, feats, onPick){
+  const order = ['sea','lake','desert','land','mountain','island','river','peak'];
+  feats = feats.slice().sort((a,b) => order.indexOf(a.type) - order.indexOf(b.type));
+  const G = map.natG; G.selectAll('*').remove();
+  const sel = G.selectAll('g').data(feats, d => d.id).join('g').attr('class', d => 'nf n-' + d.type);
+  sel.each(function(d){ const s = d3.select(this);
+    if (d.isPt){ const p = map.proj(d.g.coordinates); if (p) s.append('path').attr('class','pk').attr('transform', `translate(${p[0]},${p[1]})`); }
+    else if (d.isLine){ const dd = map.path(d.f); s.append('path').attr('class','rv').attr('d', dd); s.append('path').attr('class','hit').attr('d', dd); }
+    else s.append('path').attr('class','pg').attr('d', map.path(d.f)); });
+  if (onPick) sel.on('click', (e,d) => { e.stopPropagation(); onPick(d, e); });
+  map.onZoom(k => { const p = map.px();
+    G.selectAll('.rv').attr('stroke-width', 2.6 * p / k);
+    G.selectAll('.hit').attr('stroke-width', 20 * p / k);
+    G.selectAll('.pk').attr('d', d3.symbol(d3.symbolTriangle, Math.pow(15 * p / k, 2))()); });
+  const pick = id => sel.filter(d => d.id === id);
+  return {
+    cls(id, c, on=true){ pick(id).classed(c, on); },
+    clear(c){ sel.classed(c, false); },
+    flash(id, c='bad'){ const s = pick(id); s.classed(c, true); setTimeout(() => s.classed(c, false), 650); },
+    raise(id){ pick(id).raise(); }
+  };
+}
+function modeNature(){
+  panel.innerHTML = `<div class="loading">Loading rivers, mountains and seas…</div>`;
+  let alive = true, inner = null;
+  loadNature().then(() => { if (!alive) return; panel.innerHTML = ''; stage.innerHTML = ''; const fn = ({find:natFind, label:natLabel, trace:natTrace})[S.natFmt] || natFind; inner = fn(); })
+    .catch(() => { panel.innerHTML = '<p>Could not load the nature data. Reload the page to try again.</p>'; });
+  return () => { alive = false; inner?.(); };
+}
+function natControls(){
+  const wrap = document.createElement('div'); wrap.className = 'natbar';
+  wrap.innerHTML = `<div class="seg" role="group" aria-label="Game">${[['find','Find It'],['label','Label It'],['trace','Trace It']].map(([v,l]) => `<button type="button" data-f="${v}" aria-pressed="${S.natFmt === v}">${l}</button>`).join('')}</div>
+    <label class="lab" for="ntype" style="margin:0">Type</label><select id="ntype">${Object.entries(NTYPES).map(([v,l]) => `<option value="${v}"${S.natType === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  wrap.querySelector('.seg').onclick = e => { const f = e.target.dataset.f; if (!f) return; S.natFmt = f; saveS(); route(); };
+  wrap.querySelector('select').onchange = e => { S.natType = e.target.value; saveS(); route(); };
+  return wrap;
+}
+function natEmpty(){
+  panel.innerHTML = head('Nature', `No ${NTYPES[S.natType].toLowerCase()} on this map at this level. Try another type, region, or difficulty.`);
+  panel.appendChild(natControls()); makeMap(stage, {});
+}
+const kindOf = d => `<span class="kind">${NWORD[d.type]}</span>`;
+
+function natFind(preset){
+  const P = natPool(); if (!P.length) return natEmpty();
+  const items = preset || pickN('nat-find', P, Math.min(10, P.length));
+  panel.innerHTML = head('Nature: Find It', 'Tap the named feature on the map. Three tries, then we show you.', 'nat-find', P) +
+    `<div class="prompt"><small id="qk">Find</small><strong id="q"></strong></div>
+     <div class="stats"><span>Q <b id="qi"></b>/${items.length}</span><span>Score <b id="sc">0</b></span><span>Time <b id="tm">0:00</b></span></div>
+     <div class="row"><button class="btn" id="skip" type="button">Show me</button></div><div id="endh"></div>`;
+  panel.prepend(natControls());
+  let i = 0, tries = 0, right = 0, busy = false; const misses = []; const tm = timer($('#tm'));
+  const map = makeMap(stage, {});
+  const nat = drawNature(map, P, pick);
+  function ask(){ if (i >= items.length) return finish(); tries = 0; $('#q').textContent = items[i].n; $('#qk').textContent = 'Find the ' + NWORD[items[i].type]; $('#qi').textContent = i+1; }
+  function reveal(){ const q = items[i]; busy = true; misses.push(q); rec('nat-find', q.id, false);
+    nat.cls(q.id, 'reveal'); nat.raise(q.id); map.label(q, q.n, 'miss'); map.focus([q], 5);
+    setTimeout(() => { nat.cls(q.id, 'reveal', false); nat.cls(q.id, 'meh'); map.reset(); busy = false; i++; ask(); }, 1800); }
+  function pick(d){
+    if (busy || i >= items.length) return; const q = items[i];
+    if (d.id === q.id){ nat.cls(d.id, tries ? 'meh' : 'ok'); map.label(q, q.n);
+      if (!tries){ right++; $('#sc').textContent = right; rec('nat-find', q.id, true); toast('Yes, ' + q.n, 'good'); } else { misses.push(q); rec('nat-find', q.id, false); toast(q.n); }
+      i++; ask(); }
+    else { tries++; nat.flash(d.id); toast(`That's the ${d.n}`, 'bad'); if (tries >= 3) reveal(); }
+  }
+  $('#skip').onclick = () => { if (!busy && i < items.length) reveal(); };
+  function finish(){ $('#q').textContent = 'Done'; $('#skip').disabled = true;
+    endCard($('#endh'), {right, total:items.length, secs:tm.stop(), misses, again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = natFind(m); }}); }
+  ask(); return () => tm.stop();
+}
+
+function natLabel(preset){
+  const P = natPool(); if (!P.length) return natEmpty();
+  const items = preset || pickN('nat-label', P, Math.min(6, P.length));
+  panel.innerHTML = head('Nature: Label It', 'Tap a name, then tap its feature on the map. Or drag the name onto it.', 'nat-label', P) +
+    `<div class="tray" id="tray"></div><div class="stats"><span>Placed <b id="pl">0</b>/${items.length}</span><span>Misses <b id="ms">0</b></span><span>Time <b id="tm">0:00</b></span></div><div id="endh"></div>`;
+  panel.prepend(natControls());
+  const tm = timer($('#tm'));
+  let selected = null, placed = 0, missCount = 0; const missed = new Set();
+  const tray = $('#tray');
+  shuffle(items).forEach(d => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tag'; b.textContent = d.n; b._d = d; b.setAttribute('aria-pressed','false'); tray.appendChild(b); });
+  const map = makeMap(stage, {});
+  const nat = drawNature(map, items, d => { if (selected) check(selected, d); else toast('Tap a name first'); });
+  map.focus(items, 3);
+  function setSel(b){ tray.querySelectorAll('.tag').forEach(t => t.setAttribute('aria-pressed', t === b)); selected = b ? b._d : null; }
+  function check(item, d){
+    if (d.id === item.id){ nat.cls(d.id, missed.has(item.id) ? 'meh' : 'ok'); map.label(d, d.n); rec('nat-label', d.id, !missed.has(item.id));
+      [...tray.children].find(t => t._d === item)?.remove(); setSel(null); placed++; $('#pl').textContent = placed;
+      if (placed === items.length) finish(); }
+    else { nat.flash(d.id); missed.add(item.id); missCount++; $('#ms').textContent = missCount; toast(`That's not the ${item.n}`, 'bad'); }
+  }
+  let drag = null;
+  tray.addEventListener('pointerdown', e => { const b = e.target.closest('.tag'); if (!b) return; drag = {b, x:e.clientX, y:e.clientY, moved:false, ghost:null}; b.setPointerCapture(e.pointerId); });
+  tray.addEventListener('pointermove', e => { if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 6){ drag.moved = true; drag.ghost = document.createElement('div'); drag.ghost.className = 'ghost'; drag.ghost.textContent = drag.b._d.n; document.body.appendChild(drag.ghost); }
+    if (drag.ghost){ drag.ghost.style.left = e.clientX+'px'; drag.ghost.style.top = e.clientY+'px'; } });
+  tray.addEventListener('pointerup', e => { if (!drag) return; const dr = drag; drag = null;
+    if (dr.ghost){ dr.ghost.remove(); const el = document.elementFromPoint(e.clientX, e.clientY); const g = el && el.closest && el.closest('.nf');
+      if (g) check(dr.b._d, d3.select(g).datum()); }
+    else setSel(selected === dr.b._d ? null : dr.b); });
+  tray.addEventListener('pointercancel', () => { drag?.ghost?.remove(); drag = null; });
+  function finish(){ endCard($('#endh'), {right:items.length - missed.size, total:items.length, secs:tm.stop(), misses:items.filter(d => missed.has(d.id)), again:() => route(), drill:m => { cleanup?.(); panel.innerHTML=''; stage.innerHTML=''; cleanup = natLabel(m); }}); }
+  return () => { tm.stop(); document.querySelectorAll('.ghost').forEach(g => g.remove()); };
+}
+
+function natTrace(preset){
+  const P = natPool(); if (!P.length) return natEmpty();
+  const items = preset || pickN('nat-trace', P, Math.min(10, P.length));
+  const hard = S.diff === 'hard';
+  const map = makeMap(stage, {});
+  let nat = null;
+  quizRound({mode:'nat-trace', title:'Nature: Trace It', P, items, redo:natTrace,
+    how: hard ? 'Type the name of the highlighted feature.' : 'Name the highlighted feature.',
+    askHTML: q => { const t = natTouches(q);
+      return `<div class="prompt"><small>Name this ${NWORD[q.type]}</small><strong>What is it?</strong></div>` +
+        (t ? (S.diff === 'easy' ? `<ul class="clues"><li>${esc(t)}</li></ul>` : `<div class="row"><button class="btn" type="button" data-clue>Clue</button></div><ul class="clues" data-cl hidden><li>${esc(t)}</li></ul>`) : '') +
+        (q.elev ? `<p class="note">Height: ${q.elev.toLocaleString()} m (${Math.round(q.elev*3.281).toLocaleString()} ft)</p>` : ''); },
+    choicesFor: q => shuffle([q, ...nearestTo(q, NAT.filter(d => d.type === q.type), 3)].map(d => ({html:esc(d.n), ok:d === q}))),
+    typed: hard ? 'Type the name' : null,
+    typedItems: () => NAT,
+    check: (q, d) => d.id === q.id, after: q => q.n,
+    onShow: (q, answered) => {
+      if (!answered){ nat = drawNature(map, [q], null); nat.cls(q.id, 'mystery'); map.clearLabels(); map.focus([q], q.isPt ? 5 : 10); }
+      else { nat.cls(q.id, 'mystery', false); nat.cls(q.id, 'ok'); map.label(q, q.n); }
+    }
+  });
+  panel.prepend(natControls());
+  panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
 }
 
 // ---- Players scoreboard ----
