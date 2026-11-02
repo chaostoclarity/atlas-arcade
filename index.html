@@ -227,21 +227,33 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .modal ol{margin:4px 0 6px;padding-left:22px;display:grid;gap:8px;font-size:17px;line-height:1.45}
 .modal .btn{width:100%;min-height:52px;font-size:18px}
 .lbl.nm{font-weight:600;fill:var(--muted)}
-.nf .pg{vector-effect:non-scaling-stroke;stroke-width:1.2;cursor:pointer}
-.n-sea .pg{fill:#1c7ed6;fill-opacity:.16;stroke:#1c7ed6;stroke-opacity:.55}
-.n-lake .pg{fill:#339af0;fill-opacity:.9;stroke:#1864ab}
-.n-desert .pg{fill:#f59f00;fill-opacity:.4;stroke:#d9480f;stroke-opacity:.7}
-.n-land .pg{fill:#37b24d;fill-opacity:.3;stroke:#2b8a3e;stroke-opacity:.8}
-.n-mountain .pg{fill:#8d5524;fill-opacity:.42;stroke:#6b3d14;stroke-opacity:.8}
-.n-island .pg{fill:#be4bdb;fill-opacity:.25;stroke:#9c36b5}
-.nf .rv{fill:none;stroke:#1c7ed6;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.map.plain .f{fill:#f3f4f0;stroke:#d3d8dd}
+.map.plain .sphere,.map.plain.us .water{fill:#cfe3ee}
+.nf .pg{vector-effect:non-scaling-stroke;stroke-width:1.6;cursor:pointer}
+.n-sea .pg{fill:#1971c2;fill-opacity:.32;stroke:#ffffff;stroke-opacity:.7;stroke-width:1}
+.n-sea.ocean .pg{fill-opacity:.05;stroke:none}
+.map.lay-raster .n-sea .pg{fill:#4dabf7;fill-opacity:.45;stroke:#ffffff;stroke-opacity:.9}
+.map.lay-raster .n-sea.ocean .pg{fill-opacity:.08}
+.n-lake .pg{fill:#1c7ed6;fill-opacity:1;stroke:#ffffff;stroke-width:1.4}
+.n-desert .pg{fill:#f2a541;fill-opacity:.75;stroke:#b8600a}
+.n-land .pg{fill:#2fb344;fill-opacity:.55;stroke:#1f7a2e}
+.n-mountain .pg{fill:#8b5a2b;fill-opacity:.72;stroke:#4f300f}
+.n-island .pg{fill:#c04ce0;fill-opacity:.5;stroke:#7d1fa0;stroke-width:2}
+.nf .rvc{fill:none;stroke:#ffffff;stroke-opacity:.95;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.nf .rv{fill:none;stroke:#1864ab;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .nf .hit{fill:none;stroke:transparent;pointer-events:stroke;cursor:pointer;stroke-linecap:round;stroke-linejoin:round}
-.nf .pk{fill:#5c3d1e;stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke;cursor:pointer}
-.nf.ok .pg,.nf.ok .pk{fill:var(--good-fill);fill-opacity:.9;stroke:var(--good)} .nf.ok .rv{stroke:var(--good)}
+.nf .pk{fill:#6b3f12;stroke:#ffffff;stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer}
+.nf:hover .pg{fill-opacity:.9}.nf:hover .rv{stroke:#e8590c}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.legend i{display:inline-block;width:16px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.15)}
+.legend i.l-river{height:4px;border:0;background:#1864ab;box-shadow:0 0 0 1.5px #fff}
+.legend i.l-peak{width:0;height:0;border:7px solid transparent;border-bottom:12px solid #6b3f12;border-top:0;border-radius:0}
+.nf.ok .pg,.nf.ok .pk{fill:var(--good-fill);fill-opacity:.95;stroke:var(--good)} .nf.ok .rv{stroke:var(--good)}
 .nf.meh .pg,.nf.meh .pk{fill:var(--hint-fill);fill-opacity:.9;stroke:var(--hint)} .nf.meh .rv{stroke:var(--hint)}
 .nf.bad .pg,.nf.bad .pk{fill:var(--bad-fill);fill-opacity:.9;stroke:var(--bad)} .nf.bad .rv{stroke:var(--bad)}
 .nf.reveal .pg,.nf.reveal .pk{fill:var(--hint-fill);fill-opacity:.95;stroke:var(--hint);stroke-width:2.5} .nf.reveal .rv{stroke:var(--hint)}
-.nf.mystery .pg,.nf.mystery .pk{fill:#e8590c;fill-opacity:.55;stroke:#e8590c;stroke-width:2.5} .nf.mystery .rv{stroke:#e8590c}
+.nf.mystery .pg,.nf.mystery .pk{fill:#ff6b00;fill-opacity:.75;stroke:#ffffff;stroke-width:2.5} .nf.mystery .rv{stroke:#ff6b00}
 .natbar{display:grid;gap:8px}
 .natbar select{width:100%}
 .kind{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
@@ -1287,7 +1299,10 @@ function natMid(g){ const lines = g.type === 'LineString' ? [g.coordinates] : g.
 function natIn(d, set){
   if (set === 'world') return true;
   if (set === 'us') return d.s.length > 0;
-  return d.c.some(id => { const c = BY.get(id); return c && inRegion(c, set); });
+  // Its middle must sit inside the region's box, so Russia's Siberian rivers don't count as European.
+  const b = BOX[set], x = d.cen[0], y = d.cen[1], m = 4;
+  if (!(x >= b[0]-m && x <= b[2]+m && y >= b[1]-m && y <= b[3]+m)) return false;
+  return !d.c.length || d.c.some(id => { const c = BY.get(id); return c && inRegion(c, set); });
 }
 function natPool(){
   const all = NAT.filter(d => natIn(d, S.set) && (S.natType === 'all' || d.type === S.natType));
@@ -1305,16 +1320,17 @@ function drawNature(map, feats, onPick){
   const order = ['sea','lake','desert','land','mountain','island','river','peak'];
   feats = feats.slice().sort((a,b) => order.indexOf(a.type) - order.indexOf(b.type));
   const G = map.natG; G.selectAll('*').remove();
-  const sel = G.selectAll('g').data(feats, d => d.id).join('g').attr('class', d => 'nf n-' + d.type);
+  const sel = G.selectAll('g').data(feats, d => d.id).join('g').attr('class', d => 'nf n-' + d.type + (/Ocean/.test(d.n) ? ' ocean' : ''));
   sel.each(function(d){ const s = d3.select(this);
     if (d.isPt){ const p = map.proj(d.g.coordinates); if (p) s.append('path').attr('class','pk').attr('transform', `translate(${p[0]},${p[1]})`); }
-    else if (d.isLine){ const dd = map.path(d.f); s.append('path').attr('class','rv').attr('d', dd); s.append('path').attr('class','hit').attr('d', dd); }
+    else if (d.isLine){ const dd = map.path(d.f); s.append('path').attr('class','rvc').attr('d', dd); s.append('path').attr('class','rv').attr('d', dd); s.append('path').attr('class','hit').attr('d', dd); }
     else s.append('path').attr('class','pg').attr('d', map.path(d.f)); });
   if (onPick) sel.on('click', (e,d) => { e.stopPropagation(); onPick(d, e); });
   map.onZoom(k => { const p = map.px();
-    G.selectAll('.rv').attr('stroke-width', 2.6 * p / k);
-    G.selectAll('.hit').attr('stroke-width', 20 * p / k);
-    G.selectAll('.pk').attr('d', d3.symbol(d3.symbolTriangle, Math.pow(15 * p / k, 2))()); });
+    G.selectAll('.rvc').attr('stroke-width', 6.5 * p / k);
+    G.selectAll('.rv').attr('stroke-width', 3.4 * p / k);
+    G.selectAll('.hit').attr('stroke-width', 22 * p / k);
+    G.selectAll('.pk').attr('d', d3.symbol(d3.symbolTriangle, Math.pow(22 * p / k, 2))()); });
   const pick = id => sel.filter(d => d.id === id);
   return {
     cls(id, c, on=true){ pick(id).classed(c, on); },
@@ -1333,7 +1349,8 @@ function modeNature(){
 function natControls(){
   const wrap = document.createElement('div'); wrap.className = 'natbar';
   wrap.innerHTML = `<div class="seg" role="group" aria-label="Game">${[['find','Find It'],['label','Label It'],['trace','Trace It']].map(([v,l]) => `<button type="button" data-f="${v}" aria-pressed="${S.natFmt === v}">${l}</button>`).join('')}</div>
-    <label class="lab" for="ntype" style="margin:0">Type</label><select id="ntype">${Object.entries(NTYPES).map(([v,l]) => `<option value="${v}"${S.natType === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+    <label class="lab" for="ntype" style="margin:0">Type</label><select id="ntype">${Object.entries(NTYPES).map(([v,l]) => `<option value="${v}"${S.natType === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
+    ${S.natFmt === 'trace' ? '' : `<div class="legend" aria-label="Map key">${Object.entries(NTYPES).filter(([v]) => v !== 'all' && (S.natType === 'all' || S.natType === v)).map(([v,l]) => `<span><i class="l-${v}" style="${{lake:'background:#1c7ed6',sea:'background:rgba(25,113,194,.4)',desert:'background:#f2a541',land:'background:rgba(47,179,68,.6)',mountain:'background:#8b5a2b',island:'background:rgba(192,76,224,.55);border:1.5px solid #7d1fa0'}[v] || ''}"></i>${l}</span>`).join('')}</div>`}`;
   wrap.querySelector('.seg').onclick = e => { const f = e.target.dataset.f; if (!f) return; S.natFmt = f; saveS(); route(); };
   wrap.querySelector('select').onchange = e => { S.natType = e.target.value; saveS(); route(); };
   return wrap;
