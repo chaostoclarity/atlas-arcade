@@ -256,6 +256,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .nf.mystery .pg,.nf.mystery .pk{fill:#ff6b00;fill-opacity:.75;stroke:#ffffff;stroke-width:2.5} .nf.mystery .rv{stroke:#ff6b00}
 .natbar{display:grid;gap:8px}
 .natbar select{width:100%}
+.lm{cursor:pointer}
+.lm circle.pin{fill:#e03131;stroke:#ffffff;vector-effect:non-scaling-stroke;stroke-width:2}
+.lm.ok circle.pin{fill:var(--good-fill)} .lm.meh circle.pin{fill:var(--hint-fill)}
+.lm.truth circle.pin{fill:#2f9e44}
+.guesspin{fill:#1971c2;stroke:#ffffff;stroke-width:2;vector-effect:non-scaling-stroke}
+.missline{stroke:#e03131;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;stroke-width:2;fill:none}
+.pts{font-family:var(--display);font-weight:800;font-size:34px;line-height:1}
 .kind{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 .clues{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .clues li{background:var(--accent-soft);border-radius:10px;padding:9px 12px;font-weight:600}
@@ -392,6 +399,7 @@ const MODES = [
   {id:'capitals', name:'Capitals', sub:'Cities and countries'},
   {id:'flags', name:'Flags', sub:'Know the colors'},
   {id:'nature', name:'Nature', sub:'Rivers, peaks, seas'},
+  {id:'culture', name:'Culture', sub:'Landmarks and famous places'},
   {id:'trivia', name:'Trivia', sub:'Sunset Trivia questions'},
   {id:'players', name:'Players', sub:'Scoreboard'},
 ];
@@ -405,6 +413,7 @@ const ICON = {
   capitals:'<path d="M4 21h16M5 21V10l7-5 7 5v11M9 21v-6h6v6"/>',
   flags:'<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
   nature:'<path d="M2 20l7-12 4 6 3-4 6 10z"/><path d="M8.5 9l1.5 2"/>',
+  culture:'<path d="M4 21h16M6 21V11M18 21V11M10 21V11M14 21V11M3 11h18L12 4z"/>',
   trivia:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',
   players:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>'
 };
@@ -423,12 +432,12 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1', natFmt:'find', natType:'all', layer:'map', trivCat:'both'}, store.get('aa-prefs', {}));
+const S = Object.assign({set:'world', diff:'medium', capDir:'c2cap', flagDir:'flag2c', player:'Player 1', natFmt:'find', natType:'all', layer:'map', trivCat:'both', culFmt:'pin', culKind:'all'}, store.get('aa-prefs', {}));
 let PLAYERS = store.get('aa-players', null);
 if (!PLAYERS){ PLAYERS = ['Player 1']; const old = store.get('aa-stats', null); if (old) store.set('aa-stats:Player 1', old); store.set('aa-players', PLAYERS); }
 if (!PLAYERS.includes(S.player)) S.player = PLAYERS[0];
 let ST = store.get('aa-stats:' + S.player, {});
-const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType, layer:S.layer, trivCat:S.trivCat});
+const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType, layer:S.layer, trivCat:S.trivCat, culFmt:S.culFmt, culKind:S.culKind});
 function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
 function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
 function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.min(3, Math.max(.3, 1 + v[1] - .5*v[0])) : 1.5; }
@@ -528,7 +537,7 @@ function renderPlayers(adding=false){
     $('#npx').onclick = () => renderPlayers(); $('#np').focus(); return;
   }
   w.innerHTML = `<label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select><button type="button" class="helpbtn" id="help" aria-label="How to play" title="How to play">?</button>`;
-  $('#help').onclick = () => { const m = document.querySelector('.main').dataset.mode || 'find'; showRules(m === 'nature' ? 'nature-' + S.natFmt : m); };
+  $('#help').onclick = () => { const m = document.querySelector('.main').dataset.mode || 'find'; showRules(m === 'nature' ? 'nature-' + S.natFmt : m === 'culture' ? 'culture-' + S.culFmt : m); };
   $('#pl').onchange = e => { if (e.target.value === '__new'){ e.target.value = S.player; renderPlayers(true); } else switchPlayer(e.target.value); };
 }
 let cleanup = null;
@@ -544,12 +553,12 @@ function route(){
   $('#set').disabled = false;
   document.querySelector('.main').dataset.mode = mode;
   document.querySelector('.main').dataset.set = S.set;
-  document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain','nature'].includes(mode) ? 'sheet' : '';
+  document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain','nature'].includes(mode) || (mode === 'culture' && S.culFmt !== 'where') ? 'sheet' : '';
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
-  setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode), 50);
-  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode === 'culture' ? 'culture-' + S.culFmt : mode), 50);
+  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
@@ -620,6 +629,20 @@ const RULES = {
     'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
     'After you answer, the map shows where that country is.',
     'Ten per round. Flags you miss come back more often.']},
+  'culture-pin':{title:'Culture: Pin It', goal:'Drop a pin where the landmark is.', steps:[
+    'We name a landmark or famous place, like the Eiffel Tower.',
+    'Tap the map where you think it is. Zoom in first if you want to be precise.',
+    'You score up to 1,000 points. The closer your pin, the more you get.',
+    'A line shows how far off you were, plus a short fact about the place.',
+    'Stuck? Tap Show country (or Show state) to light it up, for half the points.']},
+  'culture-where':{title:'Culture: Where Is It?', goal:'Name the country (or US state) each landmark is in.', steps:[
+    'We name a landmark. Pick the country it is in. On the US States map, pick the state.',
+    'Easy and Medium: tap one of four. Watch out for neighbors. Hard: type it.',
+    'After you answer, the map shows exactly where it is.']},
+  'culture-name':{title:'Culture: Name It', goal:'Name the landmark at the pin.', steps:[
+    'A pin drops on the map and we tell you the city or area and what kind of place it is.',
+    'Easy and Medium: pick from four landmarks. Hard: type the name.',
+    'Tap Clue for a fact about the place.']},
   trivia:{title:'Trivia', goal:'Answer geography questions from Sunset Trivia.', steps:[
     'Pick World, US States, or Both at the top of the panel.',
     'Easy and Medium: tap one of four answers. Hard: type the answer. Small typos and common alternate names are fine.',
@@ -816,13 +839,13 @@ function makeMap(host, {set=S.set, items=universe(set), active=new Set(), fit=nu
   ctl = layerCtl(host); LIVE.push(setLayer); setLayer(S.layer || 'map');
   const sel = id => [fp.filter(d => d.id === id), dots.filter(d => d.id === id)];
   return {
-    svg, proj, path, natG, px, k: () => k, onZoom(f){ zcb.push(f); f(k); },
+    svg, proj, path, natG, g, px, k: () => k, onZoom(f){ zcb.push(f); f(k); },
     cls(id, c, on=true){ sel(id).forEach(s => s.classed(c, on)); },
     clear(c){ fp.classed(c, false); dots.classed(c, false); },
     fill(id, col){ sel(id).forEach(s => s.style('fill', col)); },
     flash(id, c='bad'){ sel(id).forEach(s => { s.classed(c, true); setTimeout(() => s.classed(c, false), 650); }); },
     label(d, text, cls=''){ const p = proj(d.cen); if (!p) return; lab.selectAll(`text[data-id="${d.id}"]`).remove();
-      lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('font-size', fs()).attr('stroke-width', fs()/4).text(text); },
+      lab.append('text').attr('data-id', d.id).attr('class','lbl ' + cls).attr('x', p[0]).attr('y', p[1]).attr('dy', /above/.test(cls) ? '-1.15em' : null).attr('font-size', fs()).attr('stroke-width', fs()/4).text(text); },
     clearLabels(){ lab.selectAll('*').remove(); },
     names(list){ nmG.selectAll('text').data(list.filter(d => proj(d.cen)), d => d.id).join('text').attr('class','lbl nm')
       .attr('x', d => proj(d.cen)[0]).attr('y', d => proj(d.cen)[1]).text(d => d.n); updNames(); },
@@ -1479,6 +1502,140 @@ function natTrace(preset){
   panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
 }
 
+// ---- Culture: landmarks and famous places ----
+let CUL = null;
+const CKIND = {all:'All landmarks', monument:'Monuments & towers', ancient:'Ancient sites', religious:'Temples & churches', building:'Palaces & buildings', engineering:'Bridges & dams', place:'Famous places'};
+const CWORD = {monument:'monument', ancient:'ancient site', religious:'religious site', building:'building', engineering:'feat of engineering', place:'famous place'};
+function modeCulture(){
+  panel.innerHTML = '<div class="loading">Loading landmarks…</div>';
+  let alive = true, inner = null;
+  (CUL ? Promise.resolve(CUL) : fetch('data/culture.json').then(r => { if (!r.ok) throw new Error('culture'); return r.json(); }).then(a => CUL = a.map(d => {
+      d.cen = d.ll; d.pt = d.ll; d.f = d.ft = {type:'Feature', geometry:{type:'Point', coordinates:d.ll}}; d.type = 'landmark'; return d; })))
+    .then(() => { if (!alive) return; panel.innerHTML = ''; stage.innerHTML = ''; const fn = ({pin:culPin, where:culWhere, name:culName})[S.culFmt] || culPin; inner = fn(); })
+    .catch(() => { panel.innerHTML = '<p>Could not load the landmarks. Reload the page to try again.</p>'; });
+  return () => { alive = false; inner?.(); };
+}
+function culIn(d, set){
+  if (set === 'us') return d.c === 'USA';
+  const c = BY.get(d.c); return !!c && (set === 'world' || inRegion(c, set));
+}
+function culPool(){
+  const all = CUL.filter(d => culIn(d, S.set) && (S.culKind === 'all' || d.k === S.culKind));
+  let lvl = {easy:1, medium:2, hard:3}[S.diff], out = all.filter(d => d.t <= lvl);
+  while (out.length < 6 && lvl < 3){ lvl++; out = all.filter(d => d.t <= lvl); }
+  return out;
+}
+const culWhereText = d => d.s ? `${d.city}, ${BY.get(d.s)?.n || d.s}` : `${d.city}, ${BY.get(d.c)?.n || d.c}`;
+function culControls(){
+  const wrap = document.createElement('div'); wrap.className = 'natbar';
+  wrap.innerHTML = `<div class="seg" role="group" aria-label="Game">${[['pin','Pin It'],['where','Where Is It?'],['name','Name It']].map(([v,l]) => `<button type="button" data-f="${v}" aria-pressed="${S.culFmt === v}">${l}</button>`).join('')}</div>
+    <label class="lab" for="ckind" style="margin:0">Type</label><select id="ckind">${Object.entries(CKIND).map(([v,l]) => `<option value="${v}"${S.culKind === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  wrap.querySelector('.seg').onclick = e => { const f = e.target.dataset.f; if (!f) return; S.culFmt = f; saveS(); route(); };
+  wrap.querySelector('select').onchange = e => { S.culKind = e.target.value; saveS(); route(); };
+  return wrap;
+}
+function culEmpty(){
+  panel.innerHTML = head('Culture', `No ${CKIND[S.culKind].toLowerCase()} on this map at this level. Try another type, region, or difficulty.`);
+  panel.appendChild(culControls()); makeMap(stage, {});
+}
+// Pins drawn in the map's feature layer, sized in screen pixels
+function drawPins(map, list, cls = ''){
+  const G = map.natG;
+  const sel = G.selectAll('g.lm').data(list, d => d.id).join(enter => { const g = enter.append('g').attr('class', 'lm ' + cls); g.append('circle').attr('class','pin'); return g; })
+    .attr('transform', d => { const p = map.proj(d.ll); return p ? `translate(${p[0]},${p[1]})` : 'translate(-999,-999)'; });
+  map.onZoom(k => G.selectAll('circle.pin').attr('r', 8 * map.px() / k));
+  return sel;
+}
+
+function culPin(preset){
+  const P = culPool(); if (!P.length) return culEmpty();
+  const items = preset || pickN('cul-pin', P, Math.min(10, P.length));
+  const isUS = S.set === 'us', scale = isUS ? 450 : 1600, goodKm = isUS ? 150 : 400;
+  panel.innerHTML = head('Culture: Pin It', 'Tap the map where this landmark is. Closer pins score more.', 'cul-pin', P) +
+    `<div class="prompt"><small id="qk">Pin the</small><strong id="q"></strong></div>
+     <div id="res"></div>
+     <div class="stats"><span>Q <b id="qi"></b>/${items.length}</span><span>Points <b id="sc">0</b></span></div>
+     <div class="row"><button class="btn" id="hintc" type="button">Show ${isUS ? 'state' : 'country'}</button><button class="btn primary" id="nx" type="button" hidden>Next</button></div><div id="endh"></div>`;
+  panel.prepend(culControls());
+  const map = makeMap(stage, {});
+  stage.insertAdjacentHTML('beforeend', '<div class="hint-line" style="bottom:auto;top:10px">Zoom in, then tap where it is.</div>');
+  let i = 0, total = 0, locked = false, hinted = false; const misses = [];
+  const lay = map.natG.append('g');
+  function ask(){
+    if (i >= items.length) return finish();
+    const q = items[i]; locked = false; hinted = false; lay.selectAll('*').remove(); map.natG.selectAll('g.lm').remove(); map.clearLabels(); map.clear('sel'); map.reset();
+    $('#q').textContent = q.n; $('#qk').textContent = 'Pin the ' + CWORD[q.k]; $('#qi').textContent = i + 1; $('#res').innerHTML = ''; $('#nx').hidden = true; $('#hintc').hidden = false; $('#hintc').disabled = false;
+  }
+  $('#hintc').onclick = () => { const q = items[i]; if (!q || locked) return; hinted = true; $('#hintc').disabled = true;
+    const c = BY.get(isUS && q.s ? q.s : q.c); if (c){ map.cls(c.id, 'sel'); map.focus([c], 5); } };
+  map.svg.on('click.pin', e => {
+    if (locked || i >= items.length || e.defaultPrevented) return;
+    const [x, y] = d3.pointer(e, map.g.node()); const ll = map.proj.invert([x, y]); if (!ll || !isFinite(ll[0])) return;
+    const q = items[i]; locked = true;
+    const km = d3.geoDistance(ll, q.ll) * R, pts = Math.round(1000 * Math.exp(-km / scale) * (hinted ? .5 : 1));
+    total += pts; $('#sc').textContent = total.toLocaleString();
+    const ok = km <= goodKm; rec('cul-pin', q.id, ok && !hinted); if (!ok) misses.push(q);
+    const tp = map.proj(q.ll), px = map.px() / map.k();
+    lay.append('path').attr('class','missline').attr('d', map.path({type:'LineString', coordinates:[ll, q.ll]}));
+    lay.append('circle').attr('class','guesspin').attr('cx', x).attr('cy', y).attr('r', 7 * px);
+    drawPins(map, [q], 'truth');
+    map.label({cen:q.ll, id:'lbl'}, q.n, 'above');
+    map.focus([{ft:{type:'Feature', geometry:{type:'MultiPoint', coordinates:[ll, q.ll]}}}], 8);
+    $('#res').innerHTML = `<div class="end"><div class="pts num">${pts.toLocaleString()} <span style="font-size:15px;font-weight:600;color:var(--muted)">points</span></div>
+      <p><b style="color:var(--ink)">${km < 1 ? 'Right on it!' : fmt(km) + ' km away.'}</b> ${esc(q.n)} is in ${esc(culWhereText(q))}.</p><p>${esc(q.fx)}</p></div>`;
+    $('#hintc').hidden = true; $('#nx').hidden = false; $('#nx').focus({preventScroll:true});
+  });
+  $('#nx').onclick = () => { i++; ask(); };
+  function finish(){
+    $('#q').textContent = 'Done'; $('#res').innerHTML = ''; $('#nx').hidden = true; $('#hintc').hidden = true;
+    $('#endh').innerHTML = `<div class="end"><div class="score num">${total.toLocaleString()}</div><p>points out of ${(items.length * 1000).toLocaleString()}.</p>
+      ${misses.length ? `<div><p class="lab">More than ${goodKm} km off</p><div class="chips">${misses.map(d => `<span class="chip off">${esc(d.n)}</span>`).join('')}</div></div>` : ''}
+      <div class="row"><button class="btn primary" type="button" id="again">New round</button>${misses.length ? '<button class="btn" type="button" id="drill">Drill the misses</button>' : ''}</div></div>`;
+    $('#again').onclick = () => route();
+    if (misses.length) $('#drill').onclick = () => { cleanup?.(); panel.innerHTML = ''; stage.innerHTML = ''; cleanup = culPin(misses); };
+  }
+  ask();
+}
+
+function culWhere(preset){
+  const P = culPool(); if (!P.length) return culEmpty();
+  const items = preset || pickN('cul-where', P, Math.min(10, P.length));
+  const isUS = S.set === 'us', hard = S.diff === 'hard', word = isUS ? 'state' : 'country';
+  const placeOf = q => BY.get(isUS && q.s ? q.s : q.c);
+  const map = makeMap(stage, {});
+  quizRound({mode:'cul-where', title:'Culture: Where Is It?', P, items, redo:culWhere,
+    how: hard ? `Type the ${word} it is in.` : `Pick the ${word} it is in.`,
+    askHTML: q => `<div class="prompt"><small>Which ${word} is home to the ${CWORD[q.k]}</small><strong>${esc(q.n)}</strong></div>`,
+    choicesFor: q => placeChoices(placeOf(q)),
+    typed: hard ? `Type a ${word}` : null, typedItems: () => isUS ? US : C,
+    check: (q, d) => d.id === placeOf(q).id, after: q => placeOf(q).n,
+    onShow: (q, answered) => { map.clear('sel'); map.clearLabels(); map.natG.selectAll('g.lm').remove();
+      if (!answered){ map.reset(); return; }
+      const c = placeOf(q); map.cls(c.id, 'sel'); drawPins(map, [q], 'truth'); map.label({cen:q.ll, id:'lbl'}, q.n, 'above'); map.focus([c], 6);
+      $('#ans').insertAdjacentHTML('beforeend', `<p class="note" style="font-size:15px;color:var(--ink);margin-top:10px">${esc(q.n)} is in ${esc(culWhereText(q))}. ${esc(q.fx)}</p>`); }
+  });
+  panel.prepend(culControls());
+}
+
+function culName(preset){
+  const P = culPool(); if (!P.length) return culEmpty();
+  const items = preset || pickN('cul-name', P, Math.min(10, P.length));
+  const hard = S.diff === 'hard';
+  const map = makeMap(stage, {});
+  quizRound({mode:'cul-name', title:'Culture: Name It', P, items, redo:culName,
+    how: hard ? 'Type the name of the landmark at the pin.' : 'Which landmark is at the pin?',
+    askHTML: q => `<div class="prompt"><small>A ${CWORD[q.k]} in ${esc(q.city)}</small><strong>What is it?</strong></div>
+      <div class="row"><button class="btn" type="button" data-clue>Clue</button></div><ul class="clues" data-cl hidden><li>${esc(q.fx.replace(new RegExp(q.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'It'))}</li></ul>`,
+    choicesFor: q => shuffle([q, ...nearestTo(q, CUL.filter(d => d !== q && (S.set !== 'us' || d.c === 'USA')), 3)].map(d => ({html:esc(d.n), ok:d === q}))),
+    typed: hard ? 'Type the landmark' : null, typedItems: () => CUL.map(d => Object.assign(d, {alt: d.alt || []})),
+    check: (q, d) => d.id === q.id, after: q => q.n,
+    onShow: (q, answered) => { map.clearLabels(); map.natG.selectAll('g.lm').remove(); drawPins(map, [q], answered ? 'truth' : '');
+      if (!answered) map.focus([q], 4); else { map.label({cen:q.ll, id:'lbl'}, q.n, 'above'); $('#ans').insertAdjacentHTML('beforeend', `<p class="note" style="font-size:15px;color:var(--ink);margin-top:10px">${esc(q.fx)}</p>`); } }
+  });
+  panel.prepend(culControls());
+  panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
+}
+
 // ---- Trivia (Geography and US States questions from Sunset Trivia) ----
 let TRIV = null;
 function placeFor(s){
@@ -1536,13 +1693,13 @@ function triviaRound(preset){
 }
 
 // ---- Players scoreboard ----
-const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags'],['nat-','Nature'],['trivia','Trivia']];
+const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags'],['nat-','Nature'],['cul-','Culture'],['trivia','Trivia']];
 function modePlayers(){
   const items = universe(S.set).filter(d => inSet(d, S.set));
   const all = PLAYERS.map(p => { const st = store.get('aa-stats:' + p, {});
     const kn = m => items.filter(d => { const v = st[m+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length;
     const solved = pre => Object.keys(st).filter(k => k.startsWith(pre) && st[k][0] > 0 && st[k][0] >= st[k][1]).length;
-    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : m === 'nat-' ? solved('nat-') : m === 'trivia' ? solved('trivia:') : kn(m));
+    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : m === 'nat-' ? solved('nat-') : m === 'cul-' ? solved('cul-') : m === 'trivia' ? solved('trivia:') : kn(m));
     const ans = Object.values(st).reduce((a,v) => a + v[0] + v[1], 0), right = Object.values(st).reduce((a,v) => a + v[0], 0);
     return {p, cols, total:cols.reduce((a,b) => a+b, 0), ans, acc: ans ? Math.round(right/ans*100) : 0}; });
   const best = BOARD.map((_,i) => Math.max(...all.map(r => r.cols[i])));
