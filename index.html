@@ -473,7 +473,8 @@ function toast(msg, kind=''){
   t.className = 'toast ' + kind; t.textContent = msg; t.hidden = false;
   clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 1800);
 }
-function flagImg(d, cls=''){ return d.c2 ? `<img class="${cls}" src="data/flags/${d.c2}.svg" alt="Flag of ${esc(d.n)}">` : ''; }
+const flagSrc = d => d.type === 'state' ? `data/stateflags/${d.id.toLowerCase()}.svg` : d.c2 ? `data/flags/${d.c2}.svg` : '';
+function flagImg(d, cls=''){ const s = flagSrc(d); return s ? `<img class="${cls}" src="${s}" alt="Flag of ${esc(d.n)}">` : ''; }
 
 // ---------- rules ----------
 const RULES = {
@@ -524,8 +525,9 @@ const RULES = {
     'The map shows where the country is, with country names on it.',
     'A right answer moves on by itself. After a wrong one, read the answer and tap Next.',
     'Ten per round. Countries you miss come back more often.']},
-  flags:{title:'Flags', goal:'Match flags and countries.', steps:[
+  flags:{title:'Flags', goal:'Match flags with countries, or with US states.', steps:[
     'Pick a direction at the top: Flag → Country, or Country → Flag.',
+    'Set the map to US States to play with state flags.',
     'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
     'After you answer, the map shows where that country is.',
     'Ten per round. Flags you miss come back more often.']},
@@ -997,23 +999,21 @@ function modeCapitals(preset){
 
 // ---- Flags ----
 function modeFlags(preset){
-  if (S.set === 'us'){
-    panel.innerHTML = head('Flags', 'Flags here cover countries. Switch the map to the world or a continent.') + '<div class="row"><button class="btn primary" type="button" id="sw">Switch to World</button></div>';
-    $('#sw').onclick = () => { S.set = 'world'; saveS(); route(); }; makeMap(stage, {}); return;
-  }
+  const isUS = S.set === 'us', U = universe(S.set), word = isUS ? 'state' : 'country';
   const P = pool(); const items = preset || pickN('flag-' + S.flagDir, P, Math.min(10, P.length));
   const fwd = S.flagDir === 'flag2c', hard = S.diff === 'hard';
-  const map = makeMap(stage, {}); map.names(C);
+  const src = isUS ? US : C.filter(d => d.sov);
+  const map = makeMap(stage, {}); map.names(U);
   quizRound({mode:'flag-' + S.flagDir, title:'Flags', P, items, redo:modeFlags,
-    how: fwd ? (hard ? 'Type the country for this flag.' : 'Pick the country that flies this flag.') : 'Pick the right flag.',
-    askHTML: q => fwd ? `<img class="bigflag" src="data/flags/${q.c2}.svg" alt="Mystery flag">` : `<div class="prompt"><small>Flag of</small><strong>${esc(q.n)}</strong></div>`,
-    choicesFor: q => fwd ? shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, P.length > 6 ? P : C, d => d.n).map(d => ({html:esc(d.n), ok:false}))])
-                         : shuffle([{html:flagImg(q), ok:true, flag:true}, ...distract(q, hard ? 5 : 3, P.length > 8 ? P : C.filter(d => d.sov), d => d.c2).map(d => ({html:flagImg(d), ok:false, flag:true}))]),
-    typed: hard && fwd ? 'Type a country' : null, typedItems: () => C,
+    how: fwd ? (hard ? `Type the ${word} for this flag.` : `Pick the ${word} that flies this flag.`) : 'Pick the right flag.',
+    askHTML: q => fwd ? `<img class="bigflag" src="${flagSrc(q)}" alt="Mystery flag">` : `<div class="prompt"><small>Flag of</small><strong>${esc(q.n)}</strong></div>`,
+    choicesFor: q => fwd ? shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, P.length > 6 ? P : src, d => d.n).map(d => ({html:esc(d.n), ok:false}))])
+                         : shuffle([{html:flagImg(q), ok:true, flag:true}, ...distract(q, hard ? 5 : 3, P.length > 8 ? P : src, d => d.id).map(d => ({html:flagImg(d), ok:false, flag:true}))]),
+    typed: hard && fwd ? `Type a ${word}` : null, typedItems: () => U,
     check: (q, d) => d.id === q.id, after: q => q.n,
     onShow: (q, answered) => { map.clear('sel'); map.clearLabels(); if (answered){ map.cls(q.id, 'sel'); map.label(q, q.n); map.focus([q], 6); } else map.reset(); }
   });
-  panel.firstElementChild.after(dirToggle('flagDir', [['flag2c', 'Flag → Country'], ['c2flag', 'Country → Flag']]));
+  panel.firstElementChild.after(dirToggle('flagDir', isUS ? [['flag2c', 'Flag → State'], ['c2flag', 'State → Flag']] : [['flag2c', 'Flag → Country'], ['c2flag', 'Country → Flag']]));
 }
 
 // ---- Atlas (true size + facts) ----
