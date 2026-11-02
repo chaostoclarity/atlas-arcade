@@ -10,6 +10,7 @@ A static site with no build step. Open `index.html` through any web server, or d
 - Flags: [flag-icons](https://github.com/lipis/flag-icons) (MIT)
 - State flags: [us-state-flags](https://www.npmjs.com/package/us-state-flags), current designs including Minnesota and Utah (2024)
 - Natural features: [Natural Earth](https://www.naturalearthdata.com/) rivers, lakes, marine areas, geographic regions and elevation points (public domain)
+- Satellite layer: NASA Blue Marble (public domain); Terrain layer: shaded relief built from NASA elevation data (both via the [three-globe](https://github.com/vasturiano/three-globe) examples)
 - Big cities for Capitals decoys: GeoNames via [all-the-cities](https://www.npmjs.com/package/all-the-cities)
 
 Progress is stored per player in the browser's local storage.
