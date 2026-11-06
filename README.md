@@ -1,6 +1,6 @@
 # Atlas Arcade
 
-Geography games for the whole family: true-size map, Find It, Label It, Shape, Hot & Cold, Border Chain, Capitals, Flags, Nature (rivers, lakes, seas, mountains, deserts, landforms, peaks, islands), Culture (landmarks and famous places), and Trivia. Works for the world, each continent, and the US states, with player profiles and a scoreboard.
+Geography games for the whole family: The Chase (track a thief city to city with clues), true-size map, Find It, Label It, Shape, Hot & Cold, Border Chain, Capitals, Flags, Nature (rivers, lakes, seas, mountains, deserts, landforms, peaks, islands), Culture (landmarks and famous places), and Trivia. Works for the world, each continent, and the US states, with player profiles and a scoreboard.
 
 A static site with no build step. Open `index.html` through any web server, or deploy the folder to Vercel as-is.
 
@@ -13,6 +13,7 @@ A static site with no build step. Open `index.html` through any web server, or d
 - Satellite layer: NASA Blue Marble (public domain); Terrain layer: shaded relief built from NASA elevation data (both via the [three-globe](https://github.com/vasturiano/three-globe) examples)
 - Landmarks: 125 hand-picked landmarks and famous places, each checked against its country and state borders
 - Trivia: the Geography and US States questions from [Sunset Trivia](https://github.com/chaostoclarity/sunset-trivia)
+- Capital city locations for The Chase: GeoNames via all-the-cities
 - Big cities for Capitals decoys: GeoNames via [all-the-cities](https://www.npmjs.com/package/all-the-cities)
 
 Progress is stored per player in the browser's local storage.

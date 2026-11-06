@@ -263,6 +263,51 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .guesspin{fill:#1971c2;stroke:#ffffff;stroke-width:2;vector-effect:non-scaling-stroke}
 .missline{stroke:#e03131;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;stroke-width:2;fill:none}
 .pts{font-family:var(--display);font-weight:800;font-size:34px;line-height:1}
+.case{display:grid;gap:12px}
+.dossier{border:1px solid var(--line-strong);border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,var(--accent-soft),transparent);display:grid;gap:6px}
+.dossier .lab{margin:0}
+.dossier h3{font-family:var(--display);font-weight:800;font-size:22px;margin:0;line-height:1.15}
+.dossier p{margin:0;color:var(--muted)}
+.clock{display:grid;gap:5px}
+.clock .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700}
+.clock .row1 span:last-child{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:600}
+.clock .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.clock .bar i{display:block;height:100%;background:var(--good);transition:width .4s}
+.clock.low .bar i{background:var(--bad)}
+.here{display:flex;align-items:center;gap:12px}
+.here img{width:44px;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.here small{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.here strong{font-family:var(--display);font-weight:800;font-size:24px;line-height:1.1}
+.wits{display:grid;gap:8px}
+.wit{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;text-align:left;border:1px solid var(--line-strong);background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit}
+.wit:hover{border-color:var(--accent);background:var(--accent-soft)}
+.wit .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.wit .av svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wit b{display:block;font-size:14px}
+.wit span{color:var(--muted);font-size:14px}
+.wit.done{cursor:default;background:var(--bg)}
+.wit.done span{color:var(--ink);font-size:15.5px;line-height:1.4}
+.wit img.cflag{display:block;width:84px;aspect-ratio:4/3;object-fit:cover;border-radius:4px;border:1px solid var(--line);margin-top:6px}
+.wit svg.csil{display:block;width:110px;height:80px;margin-top:6px}
+.wit svg.csil path{fill:var(--ink)}
+.flights{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.flight{border:1px solid var(--line-strong);background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:grid;gap:1px}
+.flight:hover{border-color:var(--accent);background:var(--accent-soft)}
+.flight b{font-size:15.5px}
+.flight span{font-size:12.5px;color:var(--muted)}
+.flight:disabled{opacity:.5;cursor:default}
+.stamps{display:flex;flex-wrap:wrap;gap:6px}
+.stamp{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--line-strong);border-radius:8px;padding:4px 8px;font-size:13px;font-weight:600}
+.stamp img{width:20px;aspect-ratio:4/3;object-fit:cover;border-radius:2px}
+.closed{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.04em;color:var(--good);border:3px solid var(--good);border-radius:10px;padding:2px 12px;transform:rotate(-4deg);justify-self:start}
+.closed.cold{color:var(--bad);border-color:var(--bad)}
+.trail{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.trail.wrong{stroke:var(--bad);stroke-dasharray:5 5;opacity:.8}
+.cpin{fill:var(--accent);stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.cpin.here{fill:#e8590c}
+.cpin.opt{fill:#fff;stroke:var(--accent);stroke-width:2.5}
+.plane{fill:#e8590c;stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
+@media (orientation:portrait) and (min-width:700px){.flights{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .kind{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 .clues{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .clues li{background:var(--accent-soft);border-radius:10px;padding:9px 12px;font-weight:600}
@@ -399,6 +444,7 @@ const MODES = [
   {id:'capitals', name:'Capitals', sub:'Cities and countries'},
   {id:'flags', name:'Flags', sub:'Know the colors'},
   {id:'nature', name:'Nature', sub:'Rivers, peaks, seas'},
+  {id:'chase', name:'The Chase', sub:'Catch the thief'},
   {id:'culture', name:'Culture', sub:'Landmarks and famous places'},
   {id:'trivia', name:'Trivia', sub:'Sunset Trivia questions'},
   {id:'players', name:'Players', sub:'Scoreboard'},
@@ -413,6 +459,7 @@ const ICON = {
   capitals:'<path d="M4 21h16M5 21V10l7-5 7 5v11M9 21v-6h6v6"/>',
   flags:'<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
   nature:'<path d="M2 20l7-12 4 6 3-4 6 10z"/><path d="M8.5 9l1.5 2"/>',
+  chase:'<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L21 21"/><path d="M8 10h4M10 8v4"/>',
   culture:'<path d="M4 21h16M6 21V11M18 21V11M10 21V11M14 21V11M3 11h18L12 4z"/>',
   trivia:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',
   players:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>'
@@ -558,7 +605,7 @@ function route(){
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
   setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode === 'culture' ? 'culture-' + S.culFmt : mode), 50);
-  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, chase:modeChase, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
@@ -629,6 +676,14 @@ const RULES = {
     'Easy and Medium: tap one of four. Hard: type the country, or pick from six flags.',
     'After you answer, the map shows where that country is.',
     'Ten per round. Flags you miss come back more often.']},
+  chase:{title:'The Chase', goal:'Track the thief from city to city and catch them before time runs out.', steps:[
+    'A thief has stolen a treasure. You start in the city where it happened.',
+    'Tap a witness to question them. Each one gives a clue about where the thief went next. Questioning costs 2 hours.',
+    'When you think you know, pick a flight. Longer flights take more hours.',
+    'Wrong city? The witnesses there have seen nothing, and you have to fly back. That wastes time.',
+    'Follow the trail to the last city and question a witness there to make the arrest, before the deadline.',
+    'The Map and difficulty pickers set where the chase happens and how hard the clues are. On Easy, flight options show the country and appear on the map.',
+    'Every case you solve raises your detective rank.']},
   'culture-pin':{title:'Culture: Pin It', goal:'Drop a pin where the landmark is.', steps:[
     'We name a landmark or famous place, like the Eiffel Tower.',
     'Tap the map where you think it is. Zoom in first if you want to be precise.',
@@ -1502,6 +1557,222 @@ function natTrace(preset){
   panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
 }
 
+// ---- The Chase: track a thief city to city using clues ----
+let CAPS = null;
+const THIEVES = [
+  {n:'Polly Glot', p:'she', o:'her', pp:'her', d:'speaks nine languages and lies in all of them'},
+  {n:'Rusty Compass', p:'he', o:'him', pp:'his', d:'never gets lost, never gets caught'},
+  {n:'Ann Tarctica', p:'she', o:'her', pp:'her', d:'cool under pressure, colder in person'},
+  {n:'Max Mileage', p:'he', o:'him', pp:'his', d:'has more frequent-flyer miles than anyone alive'},
+  {n:'Lady Longitude', p:'she', o:'her', pp:'her', d:'always knows exactly where she is'},
+  {n:'Dee Tour', p:'she', o:'her', pp:'her', d:'never takes the direct route'},
+  {n:'Sly Silkroad', p:'he', o:'him', pp:'his', d:'smuggles anything along any trade route'},
+  {n:'Hugh Mann-Geo', p:'he', o:'him', pp:'his', d:'a master of disguise with a weakness for maps'}
+];
+const LOOT = ['a solid-gold globe','the oldest map in the world','a jeweled crown','a priceless painting','a dinosaur egg','a famous diamond','an ancient golden mask','the royal scepter','a silver compass that belonged to an explorer','a rare stamp collection'];
+const RANKS = [[0,'Rookie'],[1,'Gumshoe'],[3,'Sleuth'],[6,'Detective'],[10,'Inspector'],[15,'Chief Inspector'],[25,'Legend']];
+const US_REGION = {Northeast:'CT ME MA NH RI VT NJ NY PA', Midwest:'IL IN MI OH WI IA KS MN MO NE ND SD', South:'DE FL GA MD NC SC VA WV AL KY MS TN AR LA OK TX', West:'AZ CO ID MT NV NM UT WY AK CA HI OR WA'};
+const usRegion = id => Object.keys(US_REGION).find(r => US_REGION[r].split(' ').includes(id));
+const WICON = {
+  bank:'<path d="M3 10h18M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18M12 3l9 5H3z"/>',
+  guide:'<path d="M4 21h16M6 21V11M18 21V11M10 21V11M14 21V11M3 11h18L12 4z"/>',
+  taxi:'<path d="M5 16h14M6 16l1.5-5h9L18 16M7 19a1 1 0 1 0 0-.1M17 19a1 1 0 1 0 0-.1M10 8h4"/>',
+  clerk:'<path d="M3 21V8l9-5 9 5v13M9 21v-6h6v6"/>',
+  vendor:'<path d="M3 9l2-5h14l2 5M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM5 13v8h14v-8"/>',
+  pilot:'<path d="M2 16l20-6-3-2-7 2-5-5-2 1 3 6-4 1-2-2-1 1z"/>',
+  ranger:'<path d="M2 20l7-12 4 6 3-4 6 10z"/>'
+};
+// "the Eiffel Tower" but "Machu Picchu"
+const THE_FIX = {'Tower Bridge':0,"St. Mark's Basilica":0,"Saint Basil's Cathedral":0,'Great Zimbabwe':0,'Cologne Cathedral':0,'Kaaba':1,'Moai of Easter Island':1,'Arc de Triomphe':1,'Brandenburg Gate':1,'Potala Palace':1,'Sagrada Família':1,'Château Frontenac':1};
+const theName = n => n in THE_FIX ? (THE_FIX[n] ? 'the ' + n : n) : /^(The |St\. Peter)/.test(n) ? n : /(Tower|Bridge|Canal|Wall|Arch|Gate|Memorial|Building|Sign|Needle|Colosseum|Louvre|Parthenon|Kremlin|City|Pyramid|Mahal|Alhambra|Atomium|Army|Temple|Museum|House|Bell|Moai|Alamo|Strip|Quarter|Khalifa|Fountain|Opera|Windmills|Causeway|Cliffs|Apostles|Lines|Center|Mosque|Registan|Basilica|Cathedral|Monastery|Shrine|Statue|Château|Palace of|Dam|Sands|Square)$|^(Great|Statue|Leaning|Hollywood|Empire|Petronas|Sydney|CN|Kinderdijk|Giant|Cliffs|Twelve|Nazca|Hiroshima|Wright|Kennedy|Sheikh|Belém|Guggenheim|Shwedagon|Tiger|Florence|Cologne|Palace|Lincoln|Liberty|French|Las Vegas|Brooklyn|Willis|Space|Gateway|Golden Gate|Forbidden|Terracotta|Golden Temple|Hermitage|Panama|White|Little)/.test(n) && !/^(Buckingham|Edinburgh|Neuschwanstein|Bran|Gyeongbokgung|Hagia|Notre|Times|Red|Central|Shibuya|Walt|Fushimi|Mont-|Christ|Mount|Big Ben|Taipei|Marina|Niagara|Victoria|Iguazu|Table)/.test(n) ? 'the ' + n : n;
+const money = c => { if (!c) return c; if (c === 'Euro') return 'euros'; const last = c.split(' ').pop().toLowerCase();
+  return /s$|^(yen|won|yuan|renminbi|baht|rand|kip|kyat|rupiah|riel|dong|som|tenge|manat|lari|dram|ngultrum|pa'anga|vatu|tala|kina|ariary|cedi|naira|kwacha|kwanza|loti|lilangeni|leone|ouguiya|dalasi)$/.test(last) ? c : c + 's'; };
+function rankOf(w){ let r = RANKS[0][1]; for (const [n, name] of RANKS) if (w >= n) r = name; return r; }
+function fmtClock(h){ const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const tot = 8 + h, d = Math.floor(tot / 24), hr = Math.floor(tot % 24), ap = hr < 12 ? 'AM' : 'PM', h12 = hr % 12 || 12;
+  return `${days[Math.min(6, d)]} ${h12} ${ap}`; }
+function modeChase(){
+  panel.innerHTML = '<div class="loading">Opening the case file…</div>';
+  let alive = true;
+  Promise.all([CAPS ? CAPS : fetch('data/capitals.json').then(r => r.json()), CUL ? CUL : fetch('data/culture.json').then(r => r.json()), loadNature().catch(() => [])])
+    .then(([caps, cul]) => { if (!alive) return; CAPS = caps; if (!CUL) CUL = cul.map(d => { d.cen = d.ll; d.pt = d.ll; d.f = d.ft = {type:'Feature', geometry:{type:'Point', coordinates:d.ll}}; d.type = 'landmark'; return d; }); chaseBrief(); })
+    .catch(() => { panel.innerHTML = '<p>Could not load the case files. Reload the page to try again.</p>'; });
+  return () => { alive = false; };
+}
+// Every clue a witness could give about a place, from easy and direct to hard and indirect.
+function chaseClues(d, T){
+  const S_ = T.p[0].toUpperCase() + T.p.slice(1), out = [];
+  const isUS = d.type === 'state', lvl = {easy:1, medium:2, hard:3}[S.diff];
+  const lms = CUL.filter(l => isUS ? l.s === d.id : l.c === d.id).sort((a,b) => a.t - b.t);
+  if (lms[0]) out.push({w:'guide', who:'Museum guide', h:lms[0].t, txt: lvl < 3 ? `${S_} asked me the best time to visit ${theName(lms[0].n)}.` : `${S_} wanted to see a famous ${CWORD[lms[0].k]} in ${lms[0].city}.`});
+  if (lvl < 3) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d});
+  if (!isUS){
+    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${T.pp} money into ${money(cur)}.`});
+    const langs = (d.lang || []).filter(l => l !== 'English'); const lang = langs[0] || (d.lang || [])[0];
+    if (lang) out.push({w:'clerk', who:'Hotel clerk', h: lang === 'English' ? 3 : 2, txt:`${S_} was practicing ${T.pp} ${lang} at the front desk.`});
+  }
+  const nats = (NAT || []).filter(f => (isUS ? f.s.includes(d.id) && f.s.length <= 3 : f.c.includes(d.id) && f.c.length <= 3) && f.tier <= Math.max(2, lvl)).sort((a,b) => a.tier - b.tier);
+  const NV = {river:n => `${S_} asked about boat trips on the ${n}.`, lake:n => `${S_} wanted to go swimming in ${n}.`, sea:n => `${S_} was buying a ticket for a cruise on the ${n}.`, mountain:n => `${S_} bought hiking boots for the ${n}.`, desert:n => `${S_} wanted to ride a camel across the ${n}.`, land:n => `${S_} wanted to explore the ${n}.`, peak:n => `${S_} was training to climb ${n}.`, island:n => `${S_} was looking for a ferry to ${n}.`};
+  if (nats[0]) out.push({w:'ranger', who:'Park ranger', h: nats[0].tier + 1, txt: NV[nats[0].type](nats[0].n)});
+  if (d.big?.[0]) out.push({w:'taxi', who:'Taxi driver', h:2, txt:`${S_} said ${T.p} would also stop in ${d.big[0]}.`});
+  const nb = (d.b0 || d.b || []).map(id => BY.get(id)).filter(Boolean);
+  if (nb.length >= 2) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} said ${T.pp} next stop borders ${nb.slice(0,2).map(x => x.n).join(' and ')}.`});
+  else if (!isUS && !nb.length) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} was headed to a country with no land borders at all.`});
+  if (isUS) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked about flights to the ${usRegion(d.id)}.`});
+  else out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked for a flight to ${d.sr || d.r}.`});
+  if (!isUS && d.ll) out.push({w:'taxi', who:'Taxi driver', h:3, txt:`${S_} complained there wouldn't be any beaches where ${T.p} was going.`});
+  if (lvl === 3) out.push({w:'vendor', who:'Street vendor', h:3, txt:`${S_} showed me the outline of the country on a map:`, sil:d});
+  out.push({w:'clerk', who:'Hotel clerk', h:4, txt:`${S_} wrote a city name on a napkin. It started with "${CAPS[d.id].city[0]}".`});
+  return out;
+}
+function pickWitnesses(d, T){
+  const lvl = {easy:1, medium:2, hard:3}[S.diff], all = chaseClues(d, T);
+  // Aim for clues near this level's difficulty: direct ones on Easy, indirect ones on Hard.
+  const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.2]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
+  const chosen = [], roles = new Set();
+  for (const c of ranked){ if (chosen.length >= 3) break; if (roles.has(c.w)) continue; roles.add(c.w); chosen.push(c); }
+  return chosen;
+}
+function chaseBrief(){
+  panel.innerHTML = ''; stage.innerHTML = '';
+  const isUS = S.set === 'us';
+  // Places with a disputed capital stay out of the chase.
+  const P = pool().filter(d => CAPS[d.id] && !['ISR','PSE'].includes(d.id) && (isUS || (d.cur?.length || d.lang?.length)));
+  if (P.length < 6){ panel.innerHTML = head('The Chase', 'Not enough places on this map for a chase. Pick a bigger region.'); makeMap(stage, {}); return; }
+  const legs = {easy:4, medium:5, hard:6}[S.diff];
+  const T = THIEVES[Math.random() * THIEVES.length | 0], loot = LOOT[Math.random() * LOOT.length | 0];
+  const ll = d => CAPS[d.id].ll, km = (a,b) => d3.geoDistance(ll(a), ll(b)) * R;
+  const lo = isUS ? 250 : 500, hi = isUS ? 2200 : 4500;
+  let route = null;
+  for (let t = 0; t < 200 && !route; t++){
+    const r = [P[Math.random() * P.length | 0]];
+    while (r.length <= legs){ const cur = r[r.length-1];
+      let c = P.filter(d => !r.includes(d) && km(cur, d) >= lo && km(cur, d) <= hi);
+      if (!c.length) c = P.filter(d => !r.includes(d)).sort((a,b) => km(cur,a) - km(cur,b)).slice(0, 6);
+      if (!c.length) break; r.push(c[Math.random() * c.length | 0]); }
+    if (r.length === legs + 1) route = r;
+  }
+  if (!route){ panel.innerHTML = head('The Chase', 'Could not plan a chase on this map. Try another region or difficulty.'); makeMap(stage, {}); return; }
+  const flightH = (a, b) => Math.round(2 + km(a, b) / 800);
+  const needed = route.slice(1).reduce((s, d, i) => s + flightH(route[i], d) + 2, 0) + 2;
+  const budget = needed + {easy:30, medium:20, hard:13}[S.diff];
+  const C0 = route[0], st0 = ST['chase-cases:all'] || [0,0], rank = rankOf(st0[0]);
+  const G = {T, loot, route, budget, used:0, at:0, wrongAt:null, asked:{}, flown:[[C0, null]], legs, isUS, flightH, km, ll};
+  panel.innerHTML = `<div class="case">
+    <div class="dossier"><p class="lab">Atlas Detective Agency · Case file</p>
+      <h3>${esc(T.n)} stole ${esc(loot)} from ${esc(CAPS[C0.id].city)}!</h3>
+      <p>Suspect: ${esc(T.n)}, who ${esc(T.d)}. Track ${T.o} through ${legs} more ${isUS ? 'state capitals' : 'cities'} and make the arrest by <b style="color:var(--ink)">${fmtClock(budget)}</b>.</p></div>
+    <p class="note">Agent ${esc(S.player)} · Rank: <b>${rankOf(st0[0])}</b> · ${st0[0]} case${st0[0] === 1 ? '' : 's'} solved</p>
+    <div class="row"><button class="btn primary" id="take" type="button">Take the case</button><button class="btn" id="rules" type="button">How to play</button></div></div>`;
+  $('#rules').onclick = () => showRules('chase');
+  const map = makeMap(stage, {});
+  const lay = map.natG.append('g');
+  map.onZoom(k => { const s = map.px() / k; lay.selectAll('circle.cpin').attr('r', function(){ return (this.classList.contains('here') ? 8 : 6.5) * s; }); lay.selectAll('circle.plane').attr('r', 7 * s); });
+  chaseDrawPins(map, lay, G);
+  map.focus([C0], 3);
+  $('#take').onclick = () => chaseCity(map, lay, G);
+  $('#take').focus({preventScroll:true});
+}
+function chaseDrawPins(map, lay, G, opts = []){
+  const px = map.px() / map.k();
+  lay.selectAll('*').remove();
+  const visited = G.route.slice(0, G.at + 1);
+  if (visited.length > 1) lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:visited.map(G.ll)}));
+  if (G.wrongAt) lay.append('path').attr('class','trail wrong').attr('d', map.path({type:'LineString', coordinates:[G.ll(G.route[G.at]), G.ll(G.wrongAt)]}));
+  const here = G.wrongAt || G.route[G.at];
+  const pins = [...visited.filter(d => d !== here).map(d => [d, 'cpin']), ...(G.wrongAt ? [] : opts.map(d => [d, 'cpin opt'])), [here, 'cpin here']];
+  for (const [d, cls] of pins){ const p = map.proj(G.ll(d)); if (!p) continue; lay.append('circle').attr('class', cls).attr('cx', p[0]).attr('cy', p[1]).attr('r', (cls.includes('here') ? 8 : 6.5) * px); }
+  map.clearLabels(); map.label({cen:G.ll(here), id:'here'}, CAPS[here.id].city, 'above');
+  if (S.diff === 'easy' && !G.wrongAt) opts.forEach(d => map.label({cen:G.ll(d), id:'o' + d.id}, CAPS[d.id].city, 'above'));
+}
+function chaseOptions(G){
+  if (G.opts && G.optsAt === G.at) return G.opts;
+  const cur = G.route[G.at], next = G.route[G.at + 1];
+  const fair = new Set(pool().map(d => d.id));
+  const P = (G.isUS ? US : C.filter(d => d.sov)).filter(d => CAPS[d.id] && fair.has(d.id) && !['ISR','PSE'].includes(d.id) && d !== cur && d !== next && !G.route.slice(0, G.at + 1).includes(d));
+  const near = P.sort((a,b) => G.km(cur,a) - G.km(cur,b)).slice(0, 10);
+  G.opts = shuffle([next, ...shuffle(near).slice(0, 3)]); G.optsAt = G.at;
+  return G.opts;
+}
+function chaseClock(G){
+  const left = Math.max(0, G.budget - G.used), pct = left / G.budget * 100;
+  return `<div class="clock${pct < 25 ? ' low' : ''}"><div class="row1"><span>${fmtClock(G.used)}</span><span>${left} h left · deadline ${fmtClock(G.budget)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+function chaseCity(map, lay, G){
+  const here = G.wrongAt || G.route[G.at], final = !G.wrongAt && G.at === G.legs;
+  const key = here.id + (G.wrongAt ? '-x' : ''), next = G.route[G.at + 1];
+  if (!G.asked[key]) G.asked[key] = {w: G.wrongAt ? [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}] : final ? [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}] : pickWitnesses(next, G.T), done:[]};
+  const W_ = G.asked[key], opts = G.wrongAt ? [G.route[G.at]] : final ? [] : chaseOptions(G);
+  const S_ = G.T.p[0].toUpperCase() + G.T.p.slice(1);
+  const witHTML = W_.w.map((w, i) => { const done = W_.done.includes(i);
+    let body = '';
+    if (done){
+      if (G.wrongAt) body = [`Nobody like that has come through here.`, `Never seen ${G.T.o}. Are you sure you're in the right city?`, `Sorry, detective. No one matching that description.`][i];
+      else if (final) body = `${S_}'s here! I just saw ${G.T.o} duck into an alley!`;
+      else body = esc(w.txt) + (w.flag ? flagImg(w.flag, 'cflag') : '') + (w.sil ? `<svg class="csil" viewBox="0 0 110 80"><path d="${d3.geoPath(d3.geoAzimuthalEqualArea().rotate([-w.sil.cen[0], -w.sil.cen[1]]).fitExtent([[4,4],[106,76]], w.sil.ft))(w.sil.ft)}"/></svg>` : '');
+    }
+    return `<button type="button" class="wit${done ? ' done' : ''}" data-i="${i}" ${done ? 'aria-disabled="true"' : ''}><span class="av"><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[w.w]}</svg></span><div><b>${esc(w.who)}</b><span>${done ? body : 'Tap to question (2 h)'}</span></div></button>`; }).join('');
+  const fl = opts.map(d => `<button type="button" class="flight" data-id="${d.id}"><b>${esc(CAPS[d.id].city)}</b><span>${S.diff === 'easy' || G.wrongAt ? esc(d.n) + ' · ' : ''}${G.flightH(here, d)} h flight</span></button>`).join('');
+  panel.innerHTML = `<div class="case">
+    <div class="dossier"><p class="lab">Chasing ${esc(G.T.n)} · Stop ${G.at + 1} of ${G.legs + 1}</p>${chaseClock(G)}</div>
+    <div class="here">${flagImg(here)}<div><small>You are in</small><strong>${esc(CAPS[here.id].city)}, ${esc(here.n)}</strong></div></div>
+    <div><p class="lab">${G.wrongAt ? 'The trail is cold here' : final ? 'The trail ends here' : 'Question the witnesses'}</p><div class="wits">${witHTML}</div></div>
+    ${opts.length ? `<div><p class="lab">${G.wrongAt ? 'Go back' : 'Catch a flight to'}</p><div class="flights">${fl}</div></div>` : ''}
+    <div id="msg"></div></div>`;
+  chaseDrawPins(map, lay, G, opts);
+  map.focus([here, ...opts].map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 5);
+  panel.querySelectorAll('.wit:not(.done)').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i; if (W_.done.includes(i)) return;
+    G.used += 2; W_.done.push(i);
+    if (G.used > G.budget) return chaseEnd(map, lay, G, false);
+    if (final) return chaseEnd(map, lay, G, true);
+    chaseCity(map, lay, G);
+  });
+  panel.querySelectorAll('.flight').forEach(b => b.onclick = () => {
+    const d = (G.isUS ? US : C).find(x => x.id === b.dataset.id); const from = here;
+    panel.querySelectorAll('.flight,.wit').forEach(x => x.disabled = true);
+    G.used += G.flightH(from, d);
+    chaseFly(map, lay, G, from, d, () => {
+      if (G.used > G.budget) return chaseEnd(map, lay, G, false);
+      if (G.wrongAt){ G.wrongAt = null; }
+      else if (d === G.route[G.at + 1]){ G.at++; G.flown.push([d, from]); }
+      else { G.wrongAt = d; }
+      chaseCity(map, lay, G);
+    });
+  });
+}
+function chaseFly(map, lay, G, a, b, done){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  map.focus([a, b].map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 5);
+  if (reduce) return setTimeout(done, 100);
+  setTimeout(() => {
+    const px = map.px() / map.k();
+    const path = lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:[G.ll(a), G.ll(b)]}));
+    const node = path.node(), L = node.getTotalLength();
+    const plane = lay.append('circle').attr('class','plane').attr('r', 7 * px);
+    path.attr('stroke-dasharray', `${L} ${L}`).attr('stroke-dashoffset', L);
+    d3.transition().duration(1100).ease(d3.easeCubicInOut).tween('fly', () => t => { const p = node.getPointAtLength(t * L); plane.attr('cx', p.x).attr('cy', p.y); path.attr('stroke-dashoffset', L * (1 - t)); })
+      .on('end', () => setTimeout(done, 150));
+  }, 750);
+}
+function chaseEnd(map, lay, G, won){
+  const st = ST['chase-cases:all'] || [0,0]; won ? st[0]++ : st[1]++; ST['chase-cases:all'] = st; store.set('aa-stats:' + S.player, ST);
+  const before = rankOf(st[0] - (won ? 1 : 0)), after = rankOf(st[0]);
+  G.at = G.legs; G.wrongAt = null; chaseDrawPins(map, lay, G);
+  map.focus(G.route.map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 4);
+  const last = G.route[G.legs], home = G.route[0];
+  panel.innerHTML = `<div class="case">
+    <div class="closed${won ? '' : ' cold'}">${won ? 'CASE CLOSED' : 'TRAIL WENT COLD'}</div>
+    <p style="font-size:17px;margin:0">${won
+      ? `You caught ${esc(G.T.n)} in ${esc(CAPS[last.id].city)} with ${fmtClock(G.used)} on the clock. ${esc(G.loot.replace(/^a |^an |^the /, m => m === 'a ' || m === 'an ' ? 'The ' : 'The '))} is going home to ${esc(CAPS[home.id].city)}.`
+      : `Time ran out. ${esc(G.T.n)} got away to ${esc(CAPS[last.id].city)}, ${esc(last.n)}, with ${esc(G.loot)}.`}</p>
+    ${won && after !== before ? `<div class="dossier"><p class="lab">Promotion</p><h3>You're now a ${after}!</h3></div>` : `<p class="note">Rank: <b>${after}</b> · ${st[0]} case${st[0] === 1 ? '' : 's'} solved</p>`}
+    <div><p class="lab">${won ? 'Your passport' : 'The thief\'s route'}</p><div class="stamps">${G.route.map(d => `<span class="stamp">${flagImg(d)}${esc(CAPS[d.id].city)}</span>`).join('')}</div></div>
+    <div class="row"><button class="btn primary" id="again" type="button">Next case</button></div></div>`;
+  $('#again').onclick = () => chaseBrief();
+  $('#again').focus({preventScroll:true});
+}
+
 // ---- Culture: landmarks and famous places ----
 let CUL = null;
 const CKIND = {all:'All landmarks', monument:'Monuments & towers', ancient:'Ancient sites', religious:'Temples & churches', building:'Palaces & buildings', engineering:'Bridges & dams', place:'Famous places'};
@@ -1693,13 +1964,13 @@ function triviaRound(preset){
 }
 
 // ---- Players scoreboard ----
-const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags'],['nat-','Nature'],['cul-','Culture'],['trivia','Trivia']];
+const BOARD = [['find','Find It'],['label','Label It'],['shape','Shape'],['hot','Hot & Cold'],['chain','Chains'],['cap-c2cap','Capitals'],['flag-flag2c','Flags'],['nat-','Nature'],['cul-','Culture'],['chase-','Chase'],['trivia','Trivia']];
 function modePlayers(){
   const items = universe(S.set).filter(d => inSet(d, S.set));
   const all = PLAYERS.map(p => { const st = store.get('aa-stats:' + p, {});
     const kn = m => items.filter(d => { const v = st[m+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length;
     const solved = pre => Object.keys(st).filter(k => k.startsWith(pre) && st[k][0] > 0 && st[k][0] >= st[k][1]).length;
-    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : m === 'nat-' ? solved('nat-') : m === 'cul-' ? solved('cul-') : m === 'trivia' ? solved('trivia:') : kn(m));
+    const cols = BOARD.map(([m]) => m === 'chain' ? Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length : m === 'nat-' ? solved('nat-') : m === 'cul-' ? solved('cul-') : m === 'chase-' ? ((st['chase-cases:all'] || [0])[0]) : m === 'trivia' ? solved('trivia:') : kn(m));
     const ans = Object.values(st).reduce((a,v) => a + v[0] + v[1], 0), right = Object.values(st).reduce((a,v) => a + v[0], 0);
     return {p, cols, total:cols.reduce((a,b) => a+b, 0), ans, acc: ans ? Math.round(right/ans*100) : 0}; });
   const best = BOARD.map((_,i) => Math.max(...all.map(r => r.cols[i])));
