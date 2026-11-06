@@ -5,7 +5,8 @@ const crypto = require('crypto');
 
 const PEPPER = process.env.AA_PEPPER || '';
 const MODES = ['find', 'label', 'shape', 'hot', 'chain', 'capitals', 'flags', 'nature', 'culture', 'trivia', 'chase'];
-const BAD = ['fuck','shit','cunt','bitch','dick','cock','pussy','nigg','fag','slut','whore','rape','nazi','hitler','porn','penis','vagina','asshole','bastard','retard','kike','spic','chink','twat','wank','boob','anal','sex','cum','tits','piss','crap'];
+const BAD_IN = ['fuck','shit','cunt','nigg','faggot','whore','slut','bitch','twat','wank','asshole','retard','hitler','nazi','porn','kike'];
+const BAD_WORD = ['dick','cock','pussy','penis','vagina','sex','cum','anal','tits','boob','rape','fag','spic','chink','piss','crap','bastard','butt','poop'];
 
 const keyOf = n => n.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]/g, '');
 const hash = (salt, pin) => crypto.createHash('sha256').update(PEPPER + ':' + salt + ':' + pin).digest('hex');
@@ -17,7 +18,8 @@ function cleanName(raw) {
   if (n.length < 2 || n.length > 16) return [null, 'Names are 2 to 16 characters.'];
   if (!/^[\p{L}\p{N} ._'-]+$/u.test(n)) return [null, 'Use letters, numbers, spaces, dots, dashes or apostrophes.'];
   const flat = keyOf(n).replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/\$/g, 's');
-  if (BAD.some(w => flat.includes(w))) return [null, 'Please pick a different name.'];
+  const words = n.toLowerCase().replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').split(/[^a-z]+/).filter(Boolean);
+  if (BAD_IN.some(w => flat.includes(w)) || words.some(w => BAD_WORD.includes(w) || BAD_WORD.includes(w.replace(/s$/, '')))) return [null, 'Please pick a different name.'];
   if (keyOf(n).length < 2) return [null, 'Names need at least two letters or numbers.'];
   return [n, null];
 }
@@ -51,7 +53,7 @@ module.exports = async (req, res) => {
       let cursor;
       do { const r = await list({ prefix: 'p/', cursor, limit: 1000 }); blobs.push(...r.blobs); cursor = r.hasMore ? r.cursor : null; } while (cursor);
       const players = (await Promise.all(blobs.map(b => readPlayer(b.pathname.slice(2, -5)).catch(() => null)))).filter(Boolean).map(pub);
-      res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=60');
+      res.setHeader('Cache-Control', 'no-store');
       return send(200, { today: today(), players });
     }
     if (req.method !== 'POST') return send(405, { error: 'Use GET or POST.' });
