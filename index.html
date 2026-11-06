@@ -269,8 +269,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .dossier h3{font-family:var(--display);font-weight:800;font-size:22px;margin:0;line-height:1.15}
 .dossier p{margin:0;color:var(--muted)}
 .clock{display:grid;gap:5px}
-.clock .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700}
-.clock .row1 span:last-child{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:600}
+.clock .row1{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;font-weight:700;font-size:17px}
+.clock .row1 span:first-child{white-space:nowrap}
+.clock .row1 span:last-child{font-size:13px;color:var(--muted);font-weight:600}
 .clock .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
 .clock .bar i{display:block;height:100%;background:var(--good);transition:width .4s}
 .clock.low .bar i{background:var(--bad)}
@@ -301,6 +302,25 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .stamp img{width:20px;aspect-ratio:4/3;object-fit:cover;border-radius:2px}
 .closed{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.04em;color:var(--good);border:3px solid var(--good);border-radius:10px;padding:2px 12px;transform:rotate(-4deg);justify-self:start}
 .closed.cold{color:var(--bad);border-color:var(--bad)}
+.flash{background:var(--accent-soft);border-radius:10px;padding:9px 12px;font-weight:600}
+.blurb{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5}
+details.warrant,details.notes{border:1px solid var(--line-strong);border-radius:12px;padding:10px 12px;background:var(--panel)}
+details.warrant summary,details.notes summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;font-weight:700}
+details.warrant summary::-webkit-details-marker,details.notes summary::-webkit-details-marker{display:none}
+details.warrant summary b,details.notes summary b{font-size:13px;color:var(--accent);font-weight:700}
+details.warrant summary::after,details.notes summary::after{content:"+";font-weight:800;color:var(--muted)}
+details[open].warrant summary::after,details[open].notes summary::after{content:"–"}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.wf{display:grid;gap:3px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.wf select{text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink);width:100%}
+details.notes ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:14.5px}
+details.notes li small{display:block;color:var(--muted);font-size:12px}
+.gang{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.gcard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:4px;background:var(--panel)}
+.gcard b{font-family:var(--display);font-size:17px}
+.gcard span{font-size:13px;color:var(--muted)}
+.gcard dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:4px 0 0;font-size:13.5px}
+.gcard dt{color:var(--muted)} .gcard dd{margin:0;font-weight:600}
 .trail{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linecap:round}
 .trail.wrong{stroke:var(--bad);stroke-dasharray:5 5;opacity:.8}
 .cpin{fill:var(--accent);stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
@@ -678,10 +698,13 @@ const RULES = {
     'Ten per round. Flags you miss come back more often.']},
   chase:{title:'The Chase', goal:'Track the thief from city to city and catch them before time runs out.', steps:[
     'A thief has stolen a treasure. You start in the city where it happened.',
-    'Tap a witness to question them. Each one gives a clue about where the thief went next. Questioning costs 2 hours.',
+    'Tap a witness to question them. They give clues about where the thief went next, and sometimes about what the thief looks like or likes to do.',
+    'Questions take time: 1 hour for the first in each city, then 2, then 3. You sleep from 11 PM to 7 AM.',
     'When you think you know, pick a flight. Longer flights take more hours.',
     'Wrong city? The witnesses there have seen nothing, and you have to fly back. That wastes time.',
-    'Follow the trail to the last city and question a witness there to make the arrest, before the deadline.',
+    'Open the Warrant panel and fill in what you learn about the suspect. When only one crook matches, issue the warrant. See the Dossiers for the whole gang.',
+    'Follow the trail to the last city and question a witness there to make the arrest, before the deadline. No warrant, or the wrong one, and the thief escapes.',
+    'A run-in with the thief\'s gang means you are on the right track. Your case is saved if you leave and come back.',
     'One clue is rarely enough: the wrong flights share things with the right one, like the same currency or language. Combine clues before you fly.',
     'The Map and difficulty pickers set where the chase happens and how hard the clues are. On Easy, flight options show the country and appear on the map.',
     'Every case you solve raises your detective rank.']},
@@ -1558,20 +1581,42 @@ function natTrace(preset){
   panel.addEventListener('click', e => { if (e.target.matches('[data-clue]')){ e.target.parentElement.remove(); panel.querySelector('[data-cl]')?.removeAttribute('hidden'); } });
 }
 
-// ---- The Chase: track a thief city to city using clues ----
+// ---- The Chase: a full detective game. Track a thief city to city, collect clues about where
+// they went and what they look like, get a warrant, and make the arrest before the deadline. ----
 let CAPS = null;
+const TRAITS = {
+  hair:{label:'Hair', vals:['Red','Black','Brown','Blond']},
+  hobby:{label:'Hobby', vals:['Tennis','Mountain climbing','Croquet','Skydiving']},
+  feature:{label:'Feature', vals:['Ring','Tattoo','Scar','Jewelry']},
+  vehicle:{label:'Vehicle', vals:['Convertible','Motorcycle','Limousine','Race car']}
+};
 const THIEVES = [
-  {n:'Polly Glot', p:'she', o:'her', pp:'her', d:'speaks nine languages and lies in all of them'},
-  {n:'Rusty Compass', p:'he', o:'him', pp:'his', d:'never gets lost, never gets caught'},
-  {n:'Ann Tarctica', p:'she', o:'her', pp:'her', d:'cool under pressure, colder in person'},
-  {n:'Max Mileage', p:'he', o:'him', pp:'his', d:'has more frequent-flyer miles than anyone alive'},
-  {n:'Lady Longitude', p:'she', o:'her', pp:'her', d:'always knows exactly where she is'},
-  {n:'Dee Tour', p:'she', o:'her', pp:'her', d:'never takes the direct route'},
-  {n:'Sly Silkroad', p:'he', o:'him', pp:'his', d:'smuggles anything along any trade route'},
-  {n:'Hugh Mann-Geo', p:'he', o:'him', pp:'his', d:'a master of disguise with a weakness for maps'}
+  {n:'Polly Glot', sex:'Female', hair:'Red', hobby:'Tennis', feature:'Ring', vehicle:'Convertible', d:'Speaks nine languages and lies in all of them.'},
+  {n:'Ann Tarctica', sex:'Female', hair:'Blond', hobby:'Mountain climbing', feature:'Tattoo', vehicle:'Motorcycle', d:'Cool under pressure, colder in person.'},
+  {n:'Lady Longitude', sex:'Female', hair:'Black', hobby:'Croquet', feature:'Jewelry', vehicle:'Limousine', d:'Always knows exactly where she is.'},
+  {n:'Dee Tour', sex:'Female', hair:'Brown', hobby:'Skydiving', feature:'Scar', vehicle:'Race car', d:'Never takes the direct route.'},
+  {n:'Ida Know', sex:'Female', hair:'Red', hobby:'Mountain climbing', feature:'Jewelry', vehicle:'Race car', d:'Answers every question with a shrug.'},
+  {n:'Rusty Compass', sex:'Male', hair:'Red', hobby:'Croquet', feature:'Tattoo', vehicle:'Convertible', d:'Never gets lost and never gets caught.'},
+  {n:'Max Mileage', sex:'Male', hair:'Brown', hobby:'Tennis', feature:'Ring', vehicle:'Motorcycle', d:'Has more frequent-flyer miles than anyone alive.'},
+  {n:'Sly Silkroad', sex:'Male', hair:'Black', hobby:'Skydiving', feature:'Scar', vehicle:'Limousine', d:'Smuggles anything along any trade route.'},
+  {n:'Hugh Mann-Geo', sex:'Male', hair:'Blond', hobby:'Tennis', feature:'Scar', vehicle:'Race car', d:'A master of disguise with a weakness for maps.'},
+  {n:'Phil Atlas', sex:'Male', hair:'Black', hobby:'Mountain climbing', feature:'Ring', vehicle:'Convertible', d:'Collects postcards from places he robbed.'}
 ];
-const LOOT = ['a solid-gold globe','the oldest map in the world','a jeweled crown','a priceless painting','a dinosaur egg','a famous diamond','an ancient golden mask','the royal scepter','a silver compass that belonged to an explorer','a rare stamp collection'];
-const RANKS = [[0,'Rookie'],[1,'Gumshoe'],[3,'Sleuth'],[6,'Detective'],[10,'Inspector'],[15,'Chief Inspector'],[25,'Legend']];
+const pron = t => t.sex === 'Female' ? {p:'she', o:'her', pp:'her'} : {p:'he', o:'him', pp:'his'};
+const TRAIT_LINE = {
+  hair:v => p => `${p.P} had ${v.toLowerCase()} hair.`,
+  hobby:{Tennis:p => `${p.P} was carrying a tennis racket.`, 'Mountain climbing':p => `${p.P} asked where to buy climbing rope.`, Croquet:p => `${p.P} wanted to know where to play croquet.`, Skydiving:p => `${p.P} wouldn't stop talking about skydiving.`},
+  feature:{Ring:p => `${p.P} wore a huge diamond ring.`, Tattoo:p => `${p.P} had a tattoo of a compass on ${p.pp} arm.`, Scar:p => `I noticed a scar on ${p.pp} chin.`, Jewelry:p => `${p.P} was covered in gold jewelry.`},
+  vehicle:{Convertible:p => `${p.P} drove off in a red convertible.`, Motorcycle:p => `${p.P} roared away on a motorcycle.`, Limousine:p => `A long black limousine was waiting for ${p.o}.`, 'Race car':p => `${p.P} asked where to rent a race car.`}
+};
+const traitLine = (cat, v, p) => (typeof TRAIT_LINE[cat] === 'function' ? TRAIT_LINE[cat](v) : TRAIT_LINE[cat][v])(p);
+const HENCH = [
+  p => `Watch out! One of ${p.n}'s goons just knocked over a fruit cart to slow you down. You must be close!`,
+  p => `A stranger in a trench coat snatched your map and ran. ${p.n}'s gang is nearby. You're on the right track!`,
+  p => `Someone let the air out of your taxi's tires. Sounds like ${p.n}'s crew. Keep going!`
+];
+const KIND_LOOT = {monument:'the very top of', ancient:'a priceless relic from', religious:'the golden bell of', building:'the front door of', engineering:'a whole section of', place:'the welcome sign at'};
+const RANKS = [[0,'Rookie'],[1,'Gumshoe'],[3,'Private Eye'],[6,'Detective'],[10,'Inspector'],[15,'Chief Inspector'],[25,'Legend']];
 const US_REGION = {Northeast:'CT ME MA NH RI VT NJ NY PA', Midwest:'IL IN MI OH WI IA KS MN MO NE ND SD', South:'DE FL GA MD NC SC VA WV AL KY MS TN AR LA OK TX', West:'AZ CO ID MT NV NM UT WY AK CA HI OR WA'};
 const usRegion = id => Object.keys(US_REGION).find(r => US_REGION[r].split(' ').includes(id));
 const WICON = {
@@ -1583,24 +1628,39 @@ const WICON = {
   pilot:'<path d="M2 16l20-6-3-2-7 2-5-5-2 1 3 6-4 1-2-2-1 1z"/>',
   ranger:'<path d="M2 20l7-12 4 6 3-4 6 10z"/>'
 };
-// "the Eiffel Tower" but "Machu Picchu"
-const THE_FIX = {'Tower Bridge':0,"St. Mark's Basilica":0,"Saint Basil's Cathedral":0,'Great Zimbabwe':0,'Cologne Cathedral':0,'Kaaba':1,'Moai of Easter Island':1,'Arc de Triomphe':1,'Brandenburg Gate':1,'Potala Palace':1,'Sagrada Família':1,'Château Frontenac':1};
-const theName = n => n in THE_FIX ? (THE_FIX[n] ? 'the ' + n : n) : /^(The |St\. Peter)/.test(n) ? n : /(Tower|Bridge|Canal|Wall|Arch|Gate|Memorial|Building|Sign|Needle|Colosseum|Louvre|Parthenon|Kremlin|City|Pyramid|Mahal|Alhambra|Atomium|Army|Temple|Museum|House|Bell|Moai|Alamo|Strip|Quarter|Khalifa|Fountain|Opera|Windmills|Causeway|Cliffs|Apostles|Lines|Center|Mosque|Registan|Basilica|Cathedral|Monastery|Shrine|Statue|Château|Palace of|Dam|Sands|Square)$|^(Great|Statue|Leaning|Hollywood|Empire|Petronas|Sydney|CN|Kinderdijk|Giant|Cliffs|Twelve|Nazca|Hiroshima|Wright|Kennedy|Sheikh|Belém|Guggenheim|Shwedagon|Tiger|Florence|Cologne|Palace|Lincoln|Liberty|French|Las Vegas|Brooklyn|Willis|Space|Gateway|Golden Gate|Forbidden|Terracotta|Golden Temple|Hermitage|Panama|White|Little)/.test(n) && !/^(Buckingham|Edinburgh|Neuschwanstein|Bran|Gyeongbokgung|Hagia|Notre|Times|Red|Central|Shibuya|Walt|Fushimi|Mont-|Christ|Mount|Big Ben|Taipei|Marina|Niagara|Victoria|Iguazu|Table)/.test(n) ? 'the ' + n : n;
-const money = c => { if (!c) return c; if (c === 'Euro') return 'euros'; const last = c.split(' ').pop().toLowerCase();
-  return /s$|^(yen|won|yuan|renminbi|baht|rand|kip|kyat|rupiah|riel|dong|som|tenge|manat|lari|dram|ngultrum|pa'anga|vatu|tala|kina|ariary|cedi|naira|kwacha|kwanza|loti|lilangeni|leone|ouguiya|dalasi)$/.test(last) ? c : c + 's'; };
 // "Thank you" in each language, so a witness can repeat a word instead of naming the language.
 const THANKS = {Spanish:'gracias',French:'merci',Portuguese:'obrigado',German:'danke',Italian:'grazie',Dutch:'dank je wel',Arabic:'shukran',Russian:'spasibo',Chinese:'xièxie',Swahili:'asante',Turkish:'teşekkürler',Swedish:'tack',Korean:'gamsahamnida',Afrikaans:'dankie',Slovak:'ďakujem',Albanian:'faleminderit',Greek:'efcharistó',Croatian:'hvala',Serbian:'hvala',Bosnian:'hvala',Montenegrin:'hvala',Slovene:'hvala',Vietnamese:'cảm ơn',Uzbek:'rahmat',Ukrainian:'dyakuyu',Thai:'khop khun',Tajik:'rahmat',Romanian:'mulțumesc',Moldavian:'mulțumesc',Polish:'dziękuję',Filipino:'salamat',Urdu:'shukriya','Norwegian Bokmål':'takk',Nepali:'dhanyabad',Mongolian:'bayarlalaa',Maltese:'grazzi',Malagasy:'misaotra',Macedonian:'blagodaram',Lithuanian:'ačiū',Latvian:'paldies',Lao:'khop chai',Kazakh:'rakhmet',Japanese:'arigatō',Hebrew:'toda',Irish:'go raibh maith agat','Persian (Farsi)':'mamnoon',Indonesian:'terima kasih',Malay:'terima kasih',Hindi:'dhanyavaad',Icelandic:'takk',Hungarian:'köszönöm','Haitian Creole':'mèsi',Georgian:'madloba',Finnish:'kiitos',Amharic:'ameseginalehu',Estonian:'aitäh',Danish:'tak',Czech:'děkuji',Khmer:'arkoun',Burmese:'kyay zu tin ba de',Bulgarian:'blagodarya',Belarusian:'dzyakuy',Bengali:'dhonnobad',Azerbaijani:'təşəkkür edirəm',Armenian:'shnorhakalutyun',Catalan:'gràcies',Dari:'tashakor',Pashto:'manana',Somali:'mahadsanid',Zulu:'ngiyabonga',Kinyarwanda:'murakoze',Kirundi:'murakoze',Sinhala:'istuti',Tamil:'nandri',Kyrgyz:'rakhmat',Turkmen:'sag bol',Samoan:"fa'afetai",Tongan:'mālō',Fijian:'vinaka',Dzongkha:'kadrinchey',Tigrinya:'yekenyeley',Sango:'singila',Lingala:'matondo',Shona:'ndatenda',Chewa:'zikomo',Tswana:'ke a leboga',Sotho:'kea leboha',Xhosa:'enkosi',Maldivian:'shukuriyya',Quechua:'sulpayki',Guaraní:'aguyje',Tetum:'obrigadu','Tok Pisin':'tenkyu',Sorani:'supas'};
-// Currency without the country's name: "Polish złoty" becomes "złoty", "United States dollar" becomes "dollars".
 const PLURAL = /^(dollar|peso|franc|dinar|pound|rupee|shilling|riyal|rial|dirham|euro|ruble|real|rand|krona|krone|lira|manat|sol|leone|lev|kwacha|dram|lari|lempira|quetzal|colón|córdoba|boliviano|guaraní|balboa|rufiyaa|naira|cedi|birr|kina|tala|pula|loti|somoni|tenge|hryvnia|forint|denar|mark|lek|kuna|leu|zloty)$/i;
 function bareMoney(c){
   if (/CFA/.test(c)) return 'CFA francs'; if (/Eastern Caribbean/.test(c)) return 'Eastern Caribbean dollars'; if (c === 'Euro') return 'euros';
   const w = c.split(' ').pop(), base = w.toLowerCase();
   return PLURAL.test(base) ? base + (/s$/.test(base) ? '' : 's') : base;
 }
+const THE_FIX = {'Tower Bridge':0,"St. Mark's Basilica":0,"Saint Basil's Cathedral":0,'Great Zimbabwe':0,'Cologne Cathedral':0,'Kaaba':1,'Moai of Easter Island':1,'Arc de Triomphe':1,'Brandenburg Gate':1,'Potala Palace':1,'Sagrada Família':1,'Château Frontenac':1};
+const theName = n => n in THE_FIX ? (THE_FIX[n] ? 'the ' + n : n) : /^(The |St\. Peter)/.test(n) ? n : /(Tower|Bridge|Canal|Wall|Arch|Gate|Memorial|Building|Sign|Needle|Colosseum|Louvre|Parthenon|Kremlin|City|Pyramid|Mahal|Alhambra|Atomium|Army|Temple|Museum|House|Bell|Moai|Alamo|Strip|Quarter|Khalifa|Fountain|Opera|Windmills|Causeway|Cliffs|Apostles|Lines|Center|Mosque|Registan|Basilica|Cathedral|Monastery|Shrine|Statue|Château|Palace of|Dam|Sands|Square)$|^(Great|Statue|Leaning|Hollywood|Empire|Petronas|Sydney|CN|Kinderdijk|Giant|Cliffs|Twelve|Nazca|Hiroshima|Wright|Kennedy|Sheikh|Belém|Guggenheim|Shwedagon|Tiger|Florence|Cologne|Palace|Lincoln|Liberty|French|Las Vegas|Brooklyn|Willis|Space|Gateway|Golden Gate|Forbidden|Terracotta|Golden Temple|Hermitage|Panama|White|Little)/.test(n) && !/^(Buckingham|Edinburgh|Neuschwanstein|Bran|Gyeongbokgung|Hagia|Notre|Times|Red|Central|Shibuya|Walt|Fushimi|Mont-|Christ|Mount|Big Ben|Taipei|Marina|Niagara|Victoria|Iguazu|Table)/.test(n) ? 'the ' + n : n;
 function rankOf(w){ let r = RANKS[0][1]; for (const [n, name] of RANKS) if (w >= n) r = name; return r; }
-function fmtClock(h){ const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const tot = 8 + h, d = Math.floor(tot / 24), hr = Math.floor(tot % 24), ap = hr < 12 ? 'AM' : 'PM', h12 = hr % 12 || 12;
-  return `${days[Math.min(6, d)]} ${h12} ${ap}`; }
+const nextRank = w => RANKS.find(([n]) => n > w);
+// Clock: hours since Monday 9 AM; you sleep from 11 PM to 7 AM.
+const HOUR0 = 9;
+function fmtClock(h){ const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Monday'];
+  const tot = HOUR0 + h, d = Math.floor(tot / 24), hr = Math.floor(tot % 24), ap = hr < 12 ? 'AM' : 'PM', h12 = hr % 12 || 12;
+  return `${days[Math.min(7, d)]} ${h12} ${ap}`; }
+function advance(G, h){
+  G.used += h; let slept = false;
+  const tod = () => (HOUR0 + G.used) % 24;
+  if (tod() >= 23 || tod() < 7){ G.used += (tod() >= 23 ? 24 - tod() + 7 : 7 - tod()); slept = true; }
+  return slept;
+}
+const chaseKey = () => 'aa-chase:' + S.player;
+const saveCase = G => store.set(chaseKey(), G);
+const clearCase = () => store.set(chaseKey(), null);
+const pl = id => BY.get(id);
+const cityOf = id => CAPS[id].city;
+const llOf = id => CAPS[id].ll;
+const kmB = (a, b) => d3.geoDistance(llOf(a), llOf(b)) * R;
+const flightH = (a, b) => Math.round(2 + kmB(a, b) / 800);
+const askCost = n => n + 1;   // 1st question 1 h, 2nd 2 h, 3rd 3 h
+
 function modeChase(){
   panel.innerHTML = '<div class="loading">Opening the case file…</div>';
   let alive = true;
@@ -1609,166 +1669,269 @@ function modeChase(){
     .catch(() => { panel.innerHTML = '<p>Could not load the case files. Reload the page to try again.</p>'; });
   return () => { alive = false; };
 }
-// Every clue a witness could give about a place, from easy and direct to hard and indirect.
-function chaseClues(d, T){
-  const S_ = T.p[0].toUpperCase() + T.p.slice(1), out = [];
-  const isUS = d.type === 'state', lvl = {easy:1, medium:2, hard:3}[S.diff];
+
+// Destination clues about a place, from direct (low h) to indirect (high h).
+function chaseClues(d, P_){
+  const S_ = P_.P, out = [], isUS = d.type === 'state', lvl = {easy:1, medium:2, hard:3}[S.diff];
   const lms = CUL.filter(l => isUS ? l.s === d.id : l.c === d.id).sort((a,b) => a.t - b.t);
   if (lms[0]) out.push({w:'guide', who:'Museum guide', h:lms[0].t, txt: lvl < 3 ? `${S_} asked me the best time to visit ${theName(lms[0].n)}.` : `${S_} wanted to see a famous ${CWORD[lms[0].k]} in ${lms[0].city}.`});
-  if (lvl === 1) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d});
+  if (lvl === 1) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d.id});
   if (!isUS){
-    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${T.pp} money into ${bareMoney(cur)}.`});
+    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${P_.pp} money into ${bareMoney(cur)}.`});
     const langs = (d.lang || []).filter(l => l !== 'English'); const lang = langs.find(l => THANKS[l]) || langs[0];
-    if (lang && lvl === 1) out.push({w:'clerk', who:'Hotel clerk', h:1, txt:`${S_} was practicing ${T.pp} ${lang} at the front desk.`});
+    if (lang && lvl === 1) out.push({w:'clerk', who:'Hotel clerk', h:1, txt:`${S_} was practicing ${P_.pp} ${lang} at the front desk.`});
     else if (lang && THANKS[lang]) out.push({w:'clerk', who:'Hotel clerk', h:2, txt:`${S_} kept saying "${THANKS[lang]}" to everyone. I think it means thank you.`});
   }
   const nats = (NAT || []).filter(f => (isUS ? f.s.includes(d.id) && f.s.length <= 3 : f.c.includes(d.id) && f.c.length <= 3) && f.tier <= Math.max(2, lvl)).sort((a,b) => a.tier - b.tier);
-  const NV = {river:n => `${S_} asked about boat trips on the ${n}.`, lake:n => `${S_} wanted to go swimming in ${n}.`, sea:n => `${S_} was buying a ticket for a cruise on the ${n}.`, mountain:n => `${S_} bought hiking boots for the ${n}.`, desert:n => `${S_} wanted to ride a camel across the ${n}.`, land:n => `${S_} wanted to explore the ${n}.`, peak:n => `${S_} was training to climb ${n}.`, island:n => `${S_} was looking for a ferry to ${n}.`};
+  const NV = {river:n => `${S_} asked about boat trips on the ${n}.`, lake:n => `${S_} wanted to go swimming in ${n}.`, sea:n => `${S_} bought a ticket for a cruise on the ${n}.`, mountain:n => `${S_} bought hiking boots for the ${n}.`, desert:n => `${S_} wanted to ride a camel across the ${n}.`, land:n => `${S_} wanted to explore the ${n}.`, peak:n => `${S_} was training to climb ${n}.`, island:n => `${S_} was looking for a ferry to ${n}.`};
   if (nats[0]) out.push({w:'ranger', who:'Park ranger', h: nats[0].tier + 1, txt: NV[nats[0].type](nats[0].n)});
-  if (d.big?.[0]) out.push({w:'taxi', who:'Taxi driver', h:2, txt:`${S_} said ${T.p} would also stop in ${d.big[0]}.`});
+  if (d.big?.[0]) out.push({w:'taxi', who:'Taxi driver', h:2, txt:`${S_} said ${P_.p} would also stop in ${d.big[0]}.`});
   const nb = (d.b0 || d.b || []).map(id => BY.get(id)).filter(Boolean);
-  if (nb.length >= 2) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} said ${T.pp} next stop borders ${nb.slice(0,2).map(x => x.n).join(' and ')}.`});
+  if (nb.length >= 2) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} said ${P_.pp} next stop borders ${nb.slice(0,2).map(x => x.n).join(' and ')}.`});
   else if (!isUS && !nb.length) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} was headed to a country with no land borders at all.`});
   if (isUS) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked about flights to the ${usRegion(d.id)}.`});
   else out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked for a flight to ${d.sr || d.r}.`});
-  if (!isUS && d.ll) out.push({w:'taxi', who:'Taxi driver', h:3, txt:`${S_} complained there wouldn't be any beaches where ${T.p} was going.`});
-  if (lvl === 3) out.push({w:'vendor', who:'Street vendor', h:3, txt:`${S_} showed me the outline of the country on a map:`, sil:d});
-  out.push({w:'clerk', who:'Hotel clerk', h:4, txt:`${S_} wrote a city name on a napkin. It started with "${CAPS[d.id].city[0]}".`});
+  if (!isUS && d.ll) out.push({w:'taxi', who:'Taxi driver', h:3, txt:`${S_} complained there wouldn't be any beaches where ${P_.p} was going.`});
+  if (lvl === 3 && silSVG(d)) out.push({w:'vendor', who:'Street vendor', h:3, txt:`${S_} showed me the outline of the country on a map:`, sil:d.id});
+  out.push({w:'clerk', who:'Hotel clerk', h:4, txt:`${S_} wrote a city name on a napkin. It started with "${cityOf(d.id)[0]}".`});
   return out;
 }
-function pickWitnesses(d, T){
-  const lvl = {easy:1, medium:2, hard:3}[S.diff], all = chaseClues(d, T);
-  // Aim for clues near this level's difficulty: direct ones on Easy, indirect ones on Hard.
+function pickWitnesses(d, P_){
+  const lvl = {easy:1, medium:2, hard:3}[S.diff], all = chaseClues(d, P_);
   const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.2]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
   const chosen = [], roles = new Set();
   for (const c of ranked){ if (chosen.length >= 3) break; if (roles.has(c.w)) continue; roles.add(c.w); chosen.push(c); }
   return chosen;
 }
-function chaseBrief(){
-  panel.innerHTML = ''; stage.innerHTML = '';
-  const isUS = S.set === 'us';
-  // Places with a disputed capital stay out of the chase.
+// Which traits to reveal: the fewest that pick this thief out of the gang, then the rest.
+function traitPlan(ti){
+  const T = THIEVES[ti], cats = Object.keys(TRAITS), same = THIEVES.filter(x => x !== T && x.sex === T.sex);
+  let best = cats;
+  for (let m = 1; m < 16; m++){ const sub = cats.filter((_, i) => m & (1 << i));
+    if (sub.length < best.length && same.every(x => sub.some(c => x[c] !== T[c]))) best = sub; }
+  return [...shuffle(best), ...shuffle(cats.filter(c => !best.includes(c)))];
+}
+function newCase(){
+  const isUS = S.set === 'us', wins = (ST['chase-cases:all'] || [0,0])[0];
   const P = pool().filter(d => CAPS[d.id] && !['ISR','PSE'].includes(d.id) && (isUS || (d.cur?.length || d.lang?.length)));
-  if (P.length < 6){ panel.innerHTML = head('The Chase', 'Not enough places on this map for a chase. Pick a bigger region.'); makeMap(stage, {}); return; }
-  const legs = {easy:4, medium:5, hard:6}[S.diff];
-  const T = THIEVES[Math.random() * THIEVES.length | 0], loot = LOOT[Math.random() * LOOT.length | 0];
-  const ll = d => CAPS[d.id].ll, km = (a,b) => d3.geoDistance(ll(a), ll(b)) * R;
+  if (P.length < 6) return null;
+  const legs = {easy:4, medium:5, hard:6}[S.diff] + (wins >= 6 ? 1 : 0);
   const lo = isUS ? 250 : 500, hi = isUS ? 2200 : 4500;
   let route = null;
   for (let t = 0; t < 200 && !route; t++){
     const r = [P[Math.random() * P.length | 0]];
     while (r.length <= legs){ const cur = r[r.length-1];
-      let c = P.filter(d => !r.includes(d) && km(cur, d) >= lo && km(cur, d) <= hi);
-      if (!c.length) c = P.filter(d => !r.includes(d)).sort((a,b) => km(cur,a) - km(cur,b)).slice(0, 6);
+      let c = P.filter(d => !r.includes(d) && kmB(cur.id, d.id) >= lo && kmB(cur.id, d.id) <= hi);
+      if (!c.length) c = P.filter(d => !r.includes(d)).sort((a,b) => kmB(cur.id,a.id) - kmB(cur.id,b.id)).slice(0, 6);
       if (!c.length) break; r.push(c[Math.random() * c.length | 0]); }
     if (r.length === legs + 1) route = r;
   }
-  if (!route){ panel.innerHTML = head('The Chase', 'Could not plan a chase on this map. Try another region or difficulty.'); makeMap(stage, {}); return; }
-  const flightH = (a, b) => Math.round(2 + km(a, b) / 800);
-  const needed = route.slice(1).reduce((s, d, i) => s + flightH(route[i], d) + 2, 0) + 2;
-  const budget = needed + {easy:30, medium:20, hard:13}[S.diff];
-  const C0 = route[0], st0 = ST['chase-cases:all'] || [0,0], rank = rankOf(st0[0]);
-  const G = {T, loot, route, budget, used:0, at:0, wrongAt:null, asked:{}, flown:[[C0, null]], legs, isUS, flightH, km, ll};
-  panel.innerHTML = `<div class="case">
-    <div class="dossier"><p class="lab">Atlas Detective Agency · Case file</p>
-      <h3>${esc(T.n)} stole ${esc(loot)} from ${esc(CAPS[C0.id].city)}!</h3>
-      <p>Suspect: ${esc(T.n)}, who ${esc(T.d)}. Track ${T.o} through ${legs} more ${isUS ? 'state capitals' : 'cities'} and make the arrest by <b style="color:var(--ink)">${fmtClock(budget)}</b>.</p></div>
-    <p class="note">Agent ${esc(S.player)} · Rank: <b>${rankOf(st0[0])}</b> · ${st0[0]} case${st0[0] === 1 ? '' : 's'} solved</p>
-    <div class="row"><button class="btn primary" id="take" type="button">Take the case</button><button class="btn" id="rules" type="button">How to play</button></div></div>`;
-  $('#rules').onclick = () => showRules('chase');
+  if (!route) return null;
+  const ti = Math.random() * THIEVES.length | 0, T = THIEVES[ti], start = route[0];
+  const lm = CUL.filter(l => isUS ? l.s === start.id : l.c === start.id).sort((a,b) => a.t - b.t)[0];
+  const loot = lm ? `${KIND_LOOT[lm.k]} ${theName(lm.n)}` : `the national treasure of ${start.n}`;
+  // Time budget: the correct trail with two questions per city, plus nights, plus slack.
+  const sim = {used:0};
+  for (let i = 0; i < legs; i++){ advance(sim, askCost(0) + askCost(1)); advance(sim, flightH(route[i].id, route[i+1].id)); }
+  advance(sim, 1);
+  const budget = sim.used + {easy:36, medium:28, hard:20}[S.diff];
+  return {v:2, set:S.set, diff:S.diff, ti, loot, route:route.map(d => d.id), legs, budget, used:0, at:0, wrong:null,
+    plan:traitPlan(ti), asked:{}, notes:[], warrant:{sex:'', hair:'', hobby:'', feature:'', vehicle:''}, issued:null, hench:{}, opts:null, optsAt:-1, msg:''};
+}
+
+function chaseBrief(){
+  panel.innerHTML = ''; stage.innerHTML = '';
+  const saved = store.get(chaseKey(), null), wins = (ST['chase-cases:all'] || [0,0])[0], nx = nextRank(wins);
+  const resumable = saved && saved.v === 2 && saved.route?.every(id => CAPS[id] && BY.get(id));
   const map = makeMap(stage, {});
+  if (resumable){
+    const T = THIEVES[saved.ti];
+    panel.innerHTML = `<div class="case"><div class="dossier"><p class="lab">Case in progress</p><h3>Still chasing ${esc(T.n)}</h3>
+      <p>Last seen near ${esc(cityOf(saved.wrong || saved.route[saved.at]))}. ${Math.max(0, saved.budget - saved.used)} hours left.</p></div>
+      <div class="row"><button class="btn primary" id="resume" type="button">Resume the case</button><button class="btn" id="fresh" type="button">Start a new case</button></div></div>`;
+    $('#resume').onclick = () => { S.set = saved.set; S.diff = saved.diff; saveS(); chasePlay(map, saved); };
+    $('#fresh').onclick = () => { clearCase(); chaseBrief(); };
+    return;
+  }
+  const G = newCase();
+  if (!G){ panel.innerHTML = head('The Chase', 'Not enough places on this map for a chase. Pick a bigger region.'); return; }
+  const T = THIEVES[G.ti], P_ = pron(T);
+  panel.innerHTML = `<div class="case">
+    <div class="dossier"><p class="lab">Atlas Detective Agency · New case</p>
+      <h3>Someone stole ${esc(G.loot)} in ${esc(cityOf(G.route[0]))}!</h3>
+      <p>Witnesses saw a <b style="color:var(--ink)">${T.sex.toLowerCase()}</b> suspect leave town. Follow the trail through ${G.legs} more ${G.set === 'us' ? 'state capitals' : 'cities'}, figure out who did it, and get a warrant. You must make the arrest by <b style="color:var(--ink)">${fmtClock(G.budget)}</b>.</p></div>
+    <p class="note">Agent ${esc(S.player)} · Rank: <b>${rankOf(wins)}</b> · ${wins} case${wins === 1 ? '' : 's'} solved${nx ? ` · ${nx[0] - wins} more to ${nx[1]}` : ''}</p>
+    <div class="row"><button class="btn primary" id="take" type="button">Take the case</button><button class="btn" id="gang" type="button">See the suspects</button><button class="btn" id="rules" type="button">How to play</button></div></div>`;
+  $('#rules').onclick = () => showRules('chase');
+  $('#gang').onclick = () => showGang(G);
   const lay = map.natG.append('g');
-  map.onZoom(k => { const s = map.px() / k; lay.selectAll('circle.cpin').attr('r', function(){ return (this.classList.contains('here') ? 8 : 6.5) * s; }); lay.selectAll('circle.plane').attr('r', 7 * s); });
-  chaseDrawPins(map, lay, G);
-  map.focus([C0], 3);
-  $('#take').onclick = () => chaseCity(map, lay, G);
+  map.focus([{ft:{type:'Feature', geometry:{type:'Point', coordinates:llOf(G.route[0])}}}], 3);
+  lay.append('circle').attr('class','cpin here').attr('cx', map.proj(llOf(G.route[0]))[0]).attr('cy', map.proj(llOf(G.route[0]))[1]).attr('r', 8 * map.px());
+  $('#take').onclick = () => { stage.innerHTML = ''; chasePlay(makeMap(stage, {}), G); };
   $('#take').focus({preventScroll:true});
+}
+function showGang(G){
+  document.querySelector('.modal')?.remove();
+  const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.setAttribute('aria-label','Suspect dossiers');
+  m.innerHTML = `<div class="sheet" style="max-width:760px"><p class="lab">Atlas Detective Agency</p><h2>Suspect dossiers</h2>
+    <p class="goal" style="font-size:15px;color:var(--muted);font-weight:500">One of these crooks is behind every case. Witnesses will mention what the thief looks like and likes. Use the warrant panel to narrow it down.</p>
+    <div class="gang">${THIEVES.map(t => `<div class="gcard"><b>${esc(t.n)}</b><span>${esc(t.d)}</span><dl>${['sex', ...Object.keys(TRAITS)].map(c => `<dt>${c === 'sex' ? 'Sex' : TRAITS[c].label}</dt><dd>${esc(t[c])}</dd>`).join('')}</dl></div>`).join('')}</div>
+    <button type="button" class="btn primary" id="gotit">Close</button></div>`;
+  document.body.appendChild(m);
+  const close = () => m.remove();
+  m.querySelector('#gotit').onclick = close; m.onclick = e => { if (e.target === m) close(); };
+  m.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  m.querySelector('#gotit').focus();
+}
+function matches(w){ return THIEVES.filter(t => Object.entries(w).every(([c, v]) => !v || t[c] === v)); }
+function chaseOptions(G){
+  if (G.opts && G.optsAt === G.at) return G.opts;
+  const cur = pl(G.route[G.at]), next = pl(G.route[G.at + 1]), isUS = G.set === 'us';
+  const fair = new Set(pool().map(d => d.id));
+  const P = (isUS ? US : C.filter(d => d.sov)).filter(d => CAPS[d.id] && fair.has(d.id) && !['ISR','PSE'].includes(d.id) && d !== cur && d !== next && !G.route.slice(0, G.at + 1).includes(d.id));
+  let picks;
+  if (G.diff === 'easy') picks = shuffle(P.sort((a,b) => kmB(cur.id,a.id) - kmB(cur.id,b.id)).slice(0, 10)).slice(0, 3);
+  else {
+    // Wrong answers that share something with the right one, so one clue alone is not enough.
+    const share = (a, b) => (a || []).some(x => (b || []).includes(x)), langs = l => (l || []).filter(x => x !== 'English');
+    const score = d => (isUS ? 0 : 3 * share(d.cur, next.cur) + 3 * share(langs(d.lang), langs(next.lang)) + 2 * (d.sr === next.sr) + (d.r === next.r))
+      + 2 * ((next.b0 || next.b || []).includes(d.id)) - kmB(next.id, d.id) / 2500 + Math.random() * 1.5;
+    picks = shuffle(P.map(d => [d, score(d)]).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => x[0])).slice(0, 3);
+  }
+  G.opts = shuffle([next, ...picks].map(d => d.id)); G.optsAt = G.at;
+  return G.opts;
+}
+function silSVG(d){
+  const g = d.ft || d.f; if (!g?.geometry) return '';
+  const pr = d3.geoAzimuthalEqualArea().rotate([-d.cen[0], -d.cen[1]]).fitExtent([[4,4],[106,76]], g), s = d3.geoPath(pr)(g);
+  return s ? `<svg class="csil" viewBox="0 0 110 80"><path d="${s}"/></svg>` : '';
+}
+function cityBlurb(d){
+  const isUS = d.type === 'state', lm = CUL.filter(l => isUS ? l.s === d.id : l.c === d.id).sort((a,b) => a.t - b.t)[0];
+  const bits = [`${cityOf(d.id)} is the capital of ${d.n}${isUS ? '' : `, in ${d.sr || d.r}`}.`];
+  if (!isUS){ const langs = (d.lang || []).slice(0, 2), cur = (d.cur || [])[0];
+    if (langs.length) bits.push(`People here speak ${langs.join(' and ')}${cur ? ` and pay in ${bareMoney(cur)}` : ''}.`); }
+  if (d.big?.[0]) bits.push(`The biggest other city is ${d.big[0]}.`);
+  if (lm) bits.push(`Famous sight: ${theName(lm.n)}.`);
+  return bits.join(' ');
+}
+function chaseClock(G){
+  const left = Math.max(0, G.budget - G.used), pct = left / G.budget * 100;
+  return `<div class="clock${pct < 25 ? ' low' : ''}"><div class="row1"><span>${fmtClock(G.used)}</span><span>${left} h left · due ${fmtClock(G.budget)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+function warrantHTML(G){
+  const m = matches(G.warrant), one = m.length === 1 ? m[0] : null;
+  const sel = (c, label, vals) => `<label class="wf"><span>${label}</span><select data-c="${c}"><option value="">?</option>${vals.map(v => `<option${G.warrant[c] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></label>`;
+  return `<details class="warrant"${G.openW ? ' open' : ''}><summary><span>Warrant</span><b>${G.issued != null ? 'Issued for ' + esc(THIEVES[G.issued].n) : m.length + ' suspect' + (m.length === 1 ? '' : 's') + ' match'}</b></summary>
+    <div class="wgrid">${sel('sex','Sex',['Female','Male'])}${Object.entries(TRAITS).map(([c, t]) => sel(c, t.label, t.vals)).join('')}</div>
+    <div class="chips" style="margin-top:8px">${m.map(t => `<span class="chip${one ? ' on' : ''}">${esc(t.n)}</span>`).join('') || '<span class="note">No suspect matches. Recheck your notes.</span>'}</div>
+    <div class="row" style="margin-top:8px"><button type="button" class="btn${one ? ' primary' : ''}" id="issue" ${one ? '' : 'disabled'}>${one ? 'Issue warrant for ' + esc(one.n) : 'Narrow it to one suspect'}</button><button type="button" class="btn" id="gang2">Dossiers</button></div></details>`;
+}
+function notesHTML(G){
+  if (!G.notes.length) return '';
+  return `<details class="notes"${G.openN ? ' open' : ''}><summary><span>Notebook</span><b>${G.notes.length} clue${G.notes.length === 1 ? '' : 's'}</b></summary><ul>${G.notes.map(n => `<li><small>${esc(n.city)} · ${esc(n.who)}</small>${esc(n.txt)}</li>`).join('')}</ul></details>`;
 }
 function chaseDrawPins(map, lay, G, opts = []){
   const px = map.px() / map.k();
   lay.selectAll('*').remove();
   const visited = G.route.slice(0, G.at + 1);
-  if (visited.length > 1) lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:visited.map(G.ll)}));
-  if (G.wrongAt) lay.append('path').attr('class','trail wrong').attr('d', map.path({type:'LineString', coordinates:[G.ll(G.route[G.at]), G.ll(G.wrongAt)]}));
-  const here = G.wrongAt || G.route[G.at];
-  const pins = [...visited.filter(d => d !== here).map(d => [d, 'cpin']), ...(G.wrongAt ? [] : opts.map(d => [d, 'cpin opt'])), [here, 'cpin here']];
-  for (const [d, cls] of pins){ const p = map.proj(G.ll(d)); if (!p) continue; lay.append('circle').attr('class', cls).attr('cx', p[0]).attr('cy', p[1]).attr('r', (cls.includes('here') ? 8 : 6.5) * px); }
-  map.clearLabels(); map.label({cen:G.ll(here), id:'here'}, CAPS[here.id].city, 'above');
-  if (S.diff === 'easy' && !G.wrongAt) opts.forEach(d => map.label({cen:G.ll(d), id:'o' + d.id}, CAPS[d.id].city, 'above'));
+  if (visited.length > 1) lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:visited.map(llOf)}));
+  if (G.wrong) lay.append('path').attr('class','trail wrong').attr('d', map.path({type:'LineString', coordinates:[llOf(G.route[G.at]), llOf(G.wrong)]}));
+  const here = G.wrong || G.route[G.at];
+  const pins = [...visited.filter(id => id !== here).map(id => [id, 'cpin']), ...(G.wrong ? [] : opts.map(id => [id, 'cpin opt'])), [here, 'cpin here']];
+  for (const [id, cls] of pins){ const p = map.proj(llOf(id)); if (!p) continue; lay.append('circle').attr('class', cls).attr('cx', p[0]).attr('cy', p[1]).attr('r', (cls.includes('here') ? 8 : 6.5) * px); }
+  map.clearLabels(); map.label({cen:llOf(here), id:'here'}, cityOf(here), 'above');
+  if (G.diff === 'easy' && !G.wrong) opts.forEach(id => map.label({cen:llOf(id), id:'o' + id}, cityOf(id), 'above'));
 }
-function chaseOptions(G){
-  if (G.opts && G.optsAt === G.at) return G.opts;
-  const cur = G.route[G.at], next = G.route[G.at + 1];
-  const fair = new Set(pool().map(d => d.id));
-  const P = (G.isUS ? US : C.filter(d => d.sov)).filter(d => CAPS[d.id] && fair.has(d.id) && !['ISR','PSE'].includes(d.id) && d !== cur && d !== next && !G.route.slice(0, G.at + 1).includes(d));
-  let picks;
-  if (S.diff === 'easy'){ picks = shuffle(P.sort((a,b) => G.km(cur,a) - G.km(cur,b)).slice(0, 10)).slice(0, 3); }
-  else {
-    // Wrong answers that share something with the right one, so one clue alone is not enough.
-    const share = (a, b) => (a || []).some(x => (b || []).includes(x));
-    const langs = l => (l || []).filter(x => x !== 'English');
-    const score = d => (G.isUS ? 0 : 3 * share(d.cur, next.cur) + 3 * share(langs(d.lang), langs(next.lang)) + 2 * (d.sr === next.sr) + (d.r === next.r))
-      + 2 * ((next.b0 || next.b || []).includes(d.id)) - G.km(next, d) / 2500 + Math.random() * 1.5;
-    picks = P.map(d => [d, score(d)]).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => x[0]);
-    picks = shuffle(picks).slice(0, 3);
-  }
-  G.opts = shuffle([next, ...picks]); G.optsAt = G.at;
-  return G.opts;
-}
-function chaseClock(G){
-  const left = Math.max(0, G.budget - G.used), pct = left / G.budget * 100;
-  return `<div class="clock${pct < 25 ? ' low' : ''}"><div class="row1"><span>${fmtClock(G.used)}</span><span>${left} h left · deadline ${fmtClock(G.budget)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+function chasePlay(map, G){
+  const lay = map.natG.append('g');
+  map.onZoom(k => { const s = map.px() / k; lay.selectAll('circle.cpin').attr('r', function(){ return (this.classList.contains('here') ? 8 : 6.5) * s; }); lay.selectAll('circle.plane').attr('r', 7 * s); });
+  chaseCity(map, lay, G);
 }
 function chaseCity(map, lay, G){
-  const here = G.wrongAt || G.route[G.at], final = !G.wrongAt && G.at === G.legs;
-  const key = here.id + (G.wrongAt ? '-x' : ''), next = G.route[G.at + 1];
-  if (!G.asked[key]) G.asked[key] = {w: G.wrongAt ? [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}] : final ? [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}] : pickWitnesses(next, G.T), done:[]};
-  const W_ = G.asked[key], opts = G.wrongAt ? [G.route[G.at]] : final ? [] : chaseOptions(G);
-  const S_ = G.T.p[0].toUpperCase() + G.T.p.slice(1);
-  const witHTML = W_.w.map((w, i) => { const done = W_.done.includes(i);
-    let body = '';
-    if (done){
-      if (G.wrongAt) body = [`Nobody like that has come through here.`, `Never seen ${G.T.o}. Are you sure you're in the right city?`, `Sorry, detective. No one matching that description.`][i];
-      else if (final) body = `${S_}'s here! I just saw ${G.T.o} duck into an alley!`;
-      else body = esc(w.txt) + (w.flag ? flagImg(w.flag, 'cflag') : '') + (w.sil ? `<svg class="csil" viewBox="0 0 110 80"><path d="${d3.geoPath(d3.geoAzimuthalEqualArea().rotate([-w.sil.cen[0], -w.sil.cen[1]]).fitExtent([[4,4],[106,76]], w.sil.ft))(w.sil.ft)}"/></svg>` : '');
+  saveCase(G);
+  const T = THIEVES[G.ti], P_ = pron(T); P_.P = P_.p[0].toUpperCase() + P_.p.slice(1); P_.n = T.n;
+  const hereId = G.wrong || G.route[G.at], here = pl(hereId), final = !G.wrong && G.at === G.legs;
+  const key = hereId + (G.wrong ? '-x' : '');
+  if (!G.asked[key]){
+    let w;
+    if (G.wrong || final) w = [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}];
+    else {
+      w = pickWitnesses(pl(G.route[G.at + 1]), P_);
+      const cat = G.plan[G.at % G.plan.length], slot = Math.random() * w.length | 0;
+      w[slot] = Object.assign({}, w[slot], {trait:cat});
+      if (G.at >= 1 && Math.random() < .45){ const hs = (slot + 1 + (Math.random() * 2 | 0)) % w.length; w[hs] = Object.assign({}, w[hs], {hench:Math.random() * HENCH.length | 0}); }
     }
-    return `<button type="button" class="wit${done ? ' done' : ''}" data-i="${i}" ${done ? 'aria-disabled="true"' : ''}><span class="av"><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[w.w]}</svg></span><div><b>${esc(w.who)}</b><span>${done ? body : 'Tap to question (2 h)'}</span></div></button>`; }).join('');
-  const fl = opts.map(d => `<button type="button" class="flight" data-id="${d.id}"><b>${esc(CAPS[d.id].city)}</b><span>${S.diff === 'easy' || G.wrongAt ? esc(d.n) + ' · ' : ''}${G.flightH(here, d)} h flight</span></button>`).join('');
+    G.asked[key] = {w, done:[]};
+  }
+  const W_ = G.asked[key];
+  const opts = G.wrong ? [G.route[G.at]] : final ? [] : chaseOptions(G);
+  const said = (w, i) => {
+    if (G.wrong) return [`Nobody like that has come through here.`, `Never seen anyone like that. Are you sure you're in the right city?`, `Sorry, detective. No one matching that description.`][i];
+    if (final) return `${P_.P}'s here! I just saw ${P_.o} duck into an alley!`;
+    const tr = w.trait ? traitLine(w.trait, T[w.trait], P_) : '', colon = /:$/.test(w.txt);
+    return [w.hench != null ? HENCH[w.hench](P_) : '', colon ? tr : '', w.txt, colon ? '' : tr].filter(Boolean).join(' ');
+  };
+  const witHTML = W_.w.map((w, i) => { const done = W_.done.includes(i);
+    const extra = done && !G.wrong && !final ? (w.flag ? flagImg(pl(w.flag), 'cflag') : '') + (w.sil ? silSVG(pl(w.sil)) : '') : '';
+    return `<button type="button" class="wit${done ? ' done' : ''}" data-i="${i}" ${done ? 'aria-disabled="true"' : ''}><span class="av"><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[w.w]}</svg></span><div><b>${esc(w.who)}</b><span>${done ? esc(said(w, i)) + extra : `Question (${askCost(W_.done.length)} h)`}</span></div></button>`; }).join('');
+  const fl = opts.map(id => `<button type="button" class="flight" data-id="${id}"><b>${esc(cityOf(id))}</b><span>${G.diff === 'easy' || G.wrong ? esc(pl(id).n) + ' · ' : ''}${flightH(hereId, id)} h flight</span></button>`).join('');
   panel.innerHTML = `<div class="case">
-    <div class="dossier"><p class="lab">Chasing ${esc(G.T.n)} · Stop ${G.at + 1} of ${G.legs + 1}</p>${chaseClock(G)}</div>
-    <div class="here">${flagImg(here)}<div><small>You are in</small><strong>${esc(CAPS[here.id].city)}, ${esc(here.n)}</strong></div></div>
-    <div><p class="lab">${G.wrongAt ? 'The trail is cold here' : final ? 'The trail ends here' : 'Question the witnesses'}</p><div class="wits">${witHTML}</div></div>
-    ${opts.length ? `<div><p class="lab">${G.wrongAt ? 'Go back' : 'Catch a flight to'}</p><div class="flights">${fl}</div></div>` : ''}
-    <div id="msg"></div></div>`;
+    <div class="dossier"><p class="lab">Case: ${esc(G.loot)} · Stop ${G.at + 1} of ${G.legs + 1}</p>${chaseClock(G)}</div>
+    ${G.msg ? `<div class="flash">${esc(G.msg)}</div>` : ''}
+    <div class="here">${flagImg(here)}<div><small>You are in</small><strong>${esc(cityOf(hereId))}, ${esc(here.n)}</strong></div></div>
+    <p class="blurb">${esc(cityBlurb(here))}</p>
+    <div><p class="lab">${G.wrong ? 'The trail is cold here' : final ? 'The trail ends here' : 'Question the witnesses'}</p><div class="wits">${witHTML}</div></div>
+    ${opts.length ? `<div><p class="lab">${G.wrong ? 'Go back' : 'Catch a flight to'}</p><div class="flights">${fl}</div></div>` : ''}
+    ${warrantHTML(G)}
+    ${notesHTML(G)}
+    <div class="row"><button class="btn" type="button" id="quit">Give up the case</button></div></div>`;
+  G.msg = '';
   chaseDrawPins(map, lay, G, opts);
-  map.focus([here, ...opts].map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 5);
+  map.focus([hereId, ...opts].map(id => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:llOf(id)}}})), 5);
+  const wd = panel.querySelector('details.warrant'), nd = panel.querySelector('details.notes');
+  wd.addEventListener('toggle', () => { G.openW = wd.open; });
+  nd?.addEventListener('toggle', () => { G.openN = nd.open; });
+  panel.querySelectorAll('.warrant select').forEach(s => s.onchange = () => { G.warrant[s.dataset.c] = s.value; G.openW = true; saveCase(G); const box = panel.querySelector('details.warrant'); box.outerHTML = warrantHTML(G); bindWarrant(); });
+  const bindWarrant = () => {
+    const box = panel.querySelector('details.warrant'); box.addEventListener('toggle', () => { G.openW = box.open; });
+    box.querySelectorAll('select').forEach(s => s.onchange = () => { G.warrant[s.dataset.c] = s.value; G.openW = true; saveCase(G); box.outerHTML = warrantHTML(G); bindWarrant(); });
+    $('#issue').onclick = () => { const m = matches(G.warrant); if (m.length !== 1) return; G.issued = THIEVES.indexOf(m[0]); G.openW = true; saveCase(G); toast('Warrant issued for ' + m[0].n, 'good'); panel.querySelector('details.warrant').outerHTML = warrantHTML(G); bindWarrant(); };
+    $('#gang2').onclick = () => showGang(G);
+  };
+  bindWarrant();
+  $('#quit').onclick = () => { if ($('#quit').dataset.sure){ chaseEnd(map, lay, G, 'quit'); } else { $('#quit').dataset.sure = 1; $('#quit').textContent = 'Tap again to give up'; } };
   panel.querySelectorAll('.wit:not(.done)').forEach(b => b.onclick = () => {
     const i = +b.dataset.i; if (W_.done.includes(i)) return;
-    G.used += 2; W_.done.push(i);
-    if (G.used > G.budget) return chaseEnd(map, lay, G, false);
-    if (final) return chaseEnd(map, lay, G, true);
+    const slept = advance(G, askCost(W_.done.length)); W_.done.push(i);
+    if (G.used > G.budget) return chaseEnd(map, lay, G, 'time');
+    if (final) return chaseArrest(map, lay, G);
+    const w = W_.w[i];
+    if (!G.wrong) G.notes.push({city:cityOf(hereId), who:w.who, txt:said(w, i)});
+    if (slept) G.msg = 'You turned in for the night and woke up at 7 AM.';
     chaseCity(map, lay, G);
   });
   panel.querySelectorAll('.flight').forEach(b => b.onclick = () => {
-    const d = (G.isUS ? US : C).find(x => x.id === b.dataset.id); const from = here;
-    panel.querySelectorAll('.flight,.wit').forEach(x => x.disabled = true);
-    G.used += G.flightH(from, d);
-    chaseFly(map, lay, G, from, d, () => {
-      if (G.used > G.budget) return chaseEnd(map, lay, G, false);
-      if (G.wrongAt){ G.wrongAt = null; }
-      else if (d === G.route[G.at + 1]){ G.at++; G.flown.push([d, from]); }
-      else { G.wrongAt = d; }
+    const id = b.dataset.id, from = hereId;
+    panel.querySelectorAll('.flight,.wit,select,#issue').forEach(x => x.disabled = true);
+    const slept = advance(G, flightH(from, id));
+    chaseFly(map, lay, from, id, () => {
+      if (G.used > G.budget) return chaseEnd(map, lay, G, 'time');
+      if (G.wrong) G.wrong = null;
+      else if (id === G.route[G.at + 1]) G.at++;
+      else G.wrong = id;
+      if (slept) G.msg = 'You slept on the overnight flight and landed in the morning.';
       chaseCity(map, lay, G);
     });
   });
 }
-function chaseFly(map, lay, G, a, b, done){
+function chaseFly(map, lay, a, b, done){
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  map.focus([a, b].map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 5);
+  map.focus([a, b].map(id => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:llOf(id)}}})), 5);
   if (reduce) return setTimeout(done, 100);
   setTimeout(() => {
     const px = map.px() / map.k();
-    const path = lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:[G.ll(a), G.ll(b)]}));
+    const path = lay.append('path').attr('class','trail').attr('d', map.path({type:'LineString', coordinates:[llOf(a), llOf(b)]}));
     const node = path.node(), L = node.getTotalLength();
     const plane = lay.append('circle').attr('class','plane').attr('r', 7 * px);
     path.attr('stroke-dasharray', `${L} ${L}`).attr('stroke-dashoffset', L);
@@ -1776,19 +1939,32 @@ function chaseFly(map, lay, G, a, b, done){
       .on('end', () => setTimeout(done, 150));
   }, 750);
 }
-function chaseEnd(map, lay, G, won){
-  const st = ST['chase-cases:all'] || [0,0]; won ? st[0]++ : st[1]++; ST['chase-cases:all'] = st; store.set('aa-stats:' + S.player, ST);
-  const before = rankOf(st[0] - (won ? 1 : 0)), after = rankOf(st[0]);
-  G.at = G.legs; G.wrongAt = null; chaseDrawPins(map, lay, G);
-  map.focus(G.route.map(d => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:G.ll(d)}}})), 4);
+function chaseArrest(map, lay, G){
+  const T = THIEVES[G.ti];
+  panel.innerHTML = `<div class="case"><div class="dossier"><p class="lab">${esc(cityOf(G.route[G.legs]))}</p><h3>You chase the suspect down an alley…</h3><p>Officers close in from both ends.</p></div></div>`;
+  setTimeout(() => chaseEnd(map, lay, G, G.issued === G.ti ? 'won' : G.issued == null ? 'nowarrant' : 'wrongwarrant'), 1600);
+}
+function chaseEnd(map, lay, G, how){
+  clearCase();
+  const won = how === 'won', st = ST['chase-cases:all'] || [0,0];
+  if (how !== 'quit'){ won ? st[0]++ : st[1]++; ST['chase-cases:all'] = st; store.set('aa-stats:' + S.player, ST); }
+  const before = rankOf(st[0] - (won ? 1 : 0)), after = rankOf(st[0]), T = THIEVES[G.ti];
+  G.at = G.legs; G.wrong = null; chaseDrawPins(map, lay, G);
+  map.focus(G.route.map(id => ({ft:{type:'Feature', geometry:{type:'Point', coordinates:llOf(id)}}})), 4);
   const last = G.route[G.legs], home = G.route[0];
+  const msg = {
+    won:`You caught ${esc(T.n)} in ${esc(cityOf(last))} with ${G.budget - G.used} hours to spare. ${esc(G.loot.replace(/^(a |an |the )/, 'The ').replace(/^./, c => c.toUpperCase()))} is going back to ${esc(cityOf(home))}.`,
+    nowarrant:`You cornered ${esc(T.n)}, but without a warrant you had to let ${pron(T).o} go. Next time, use the clues about the suspect to get a warrant first.`,
+    wrongwarrant:`Your warrant was for ${esc(THIEVES[G.issued]?.n || 'someone else')}, but the thief was ${esc(T.n)}. ${pron(T).p[0].toUpperCase() + pron(T).p.slice(1)} walked right past you.`,
+    time:`Time ran out. ${esc(T.n)} got away to ${esc(cityOf(last))}, ${esc(pl(last).n)}.`,
+    quit:`You handed the case off. ${esc(T.n)} was hiding in ${esc(cityOf(last))}, ${esc(pl(last).n)}.`
+  }[how];
   panel.innerHTML = `<div class="case">
-    <div class="closed${won ? '' : ' cold'}">${won ? 'CASE CLOSED' : 'TRAIL WENT COLD'}</div>
-    <p style="font-size:17px;margin:0">${won
-      ? `You caught ${esc(G.T.n)} in ${esc(CAPS[last.id].city)} with ${fmtClock(G.used)} on the clock. ${esc(G.loot.replace(/^a |^an |^the /, m => m === 'a ' || m === 'an ' ? 'The ' : 'The '))} is going home to ${esc(CAPS[home.id].city)}.`
-      : `Time ran out. ${esc(G.T.n)} got away to ${esc(CAPS[last.id].city)}, ${esc(last.n)}, with ${esc(G.loot)}.`}</p>
+    <div class="closed${won ? '' : ' cold'}">${won ? 'CASE CLOSED' : how === 'time' ? 'TRAIL WENT COLD' : how === 'quit' ? 'CASE DROPPED' : 'SUSPECT ESCAPED'}</div>
+    <p style="font-size:17px;margin:0">${msg}</p>
     ${won && after !== before ? `<div class="dossier"><p class="lab">Promotion</p><h3>You're now a ${after}!</h3></div>` : `<p class="note">Rank: <b>${after}</b> · ${st[0]} case${st[0] === 1 ? '' : 's'} solved</p>`}
-    <div><p class="lab">${won ? 'Your passport' : 'The thief\'s route'}</p><div class="stamps">${G.route.map(d => `<span class="stamp">${flagImg(d)}${esc(CAPS[d.id].city)}</span>`).join('')}</div></div>
+    <div class="gcard" style="max-width:340px"><b>${esc(T.n)}</b><span>${esc(T.d)}</span><dl>${['sex', ...Object.keys(TRAITS)].map(c => `<dt>${c === 'sex' ? 'Sex' : TRAITS[c].label}</dt><dd>${esc(T[c])}</dd>`).join('')}</dl></div>
+    <div><p class="lab">${won ? 'Your passport' : 'The thief\'s route'}</p><div class="stamps">${G.route.map(id => `<span class="stamp">${flagImg(pl(id))}${esc(cityOf(id))}</span>`).join('')}</div></div>
     <div class="row"><button class="btn primary" id="again" type="button">Next case</button></div></div>`;
   $('#again').onclick = () => chaseBrief();
   $('#again').focus({preventScroll:true});
