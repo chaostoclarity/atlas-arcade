@@ -417,10 +417,11 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
 .olrow label{display:grid;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .olrow input{font:inherit;font-size:17px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);min-width:0;text-transform:none;letter-spacing:0}
 .olrow .btn{grid-column:1/-1}
+.oldel{grid-column:1/-1;font-size:13.5px;color:var(--muted)}.oldel summary{cursor:pointer}.oldel p{margin:6px 0}
 .olerr{color:var(--bad);font-weight:600}.olerr:empty{display:none}
 .mono{font-family:var(--mono)}
 a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center}
-a.btn.primary{color:#fff}
+a.btn.primary{color:var(--accent-ink)}
 .main[data-mode="daily"] .bigflag{max-height:30vh;width:auto;max-width:100%}
 .dlist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
 .btn.big{font-size:18px;padding:14px 22px}
@@ -2389,8 +2390,12 @@ function onlineCard(host, onDone, {compact=false} = {}){
   const me = onlineMe();
   if (!ONLINE_OK){ host.innerHTML = `<div class="olcard"><b>Leaderboards are online only</b><p>Open the web app at <span class="mono">atlas-arcade-black.vercel.app</span> to post scores and see everyone's.</p></div>`; return; }
   if (me){
-    host.innerHTML = `<div class="olcard on"><div><small>On the leaderboard as</small><b>${esc(me.name)}</b></div><button class="btn" type="button" data-out>Sign out</button></div>`;
+    host.innerHTML = `<div class="olcard on"><div><small>On the leaderboard as</small><b>${esc(me.name)}</b></div><button class="btn" type="button" data-out>Sign out</button>
+      <details class="oldel"><summary>Remove me from the leaderboard</summary><p>This deletes your name and scores from the public board. Your progress on this device stays.</p><button class="btn" type="button" data-del>Delete my player</button></details></div>`;
     host.querySelector('[data-out]').onclick = () => { store.set(onlineKey(), null); onlineCard(host, onDone, {compact}); };
+    host.querySelector('[data-del]').onclick = async e => { e.target.disabled = true;
+      try { await api({op:'leave', name:me.name, pin:me.pin}); store.set(onlineKey(), null); toast('Removed from the leaderboard'); onlineCard(host, onDone, {compact}); }
+      catch (x) { toast(x.message, 'bad'); e.target.disabled = false; } };
     return;
   }
   host.innerHTML = `<form class="olcard" autocomplete="off">

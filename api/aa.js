@@ -1,6 +1,6 @@
 // Atlas Arcade online: players (name + PIN), progress sync, Daily Challenge scores, public leaderboard.
 // Storage: one private Vercel Blob file per player at p/<key>.json.
-const { put, get, list } = require('@vercel/blob');
+const { put, get, list, del } = require('@vercel/blob');
 const crypto = require('crypto');
 
 const PEPPER = process.env.AA_PEPPER || '';
@@ -74,6 +74,11 @@ module.exports = async (req, res) => {
 
     if (!p) return send(404, { error: 'No player with that name. Join first.' });
     if (p.hash !== hash(p.salt, body.pin)) return send(403, { error: 'Wrong PIN.' });
+
+    if (body.op === 'leave') {
+      await del(`p/${key}.json`);
+      return send(200, { ok: true });
+    }
 
     if (body.op === 'sync') {
       const m = body.mastery || {}, out = {};
