@@ -58,6 +58,14 @@ module.exports = async (req, res) => {
     }
     if (req.method !== 'POST') return send(405, { error: 'Use GET or POST.' });
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    // Owner-only: clear one day's Daily Challenge scores for everyone (used after changing that day's questions).
+    if (body.op === 'resetday') {
+      if (!PEPPER || body.secret !== PEPPER) return send(403, { error: 'Not allowed.' });
+      const d = String(body.date || '');
+      const blobs = (await list({ prefix: 'p/', limit: 1000 })).blobs; let n = 0;
+      for (const b of blobs) { const k = b.pathname.slice(2, -5), pl = await readPlayer(k); if (pl?.daily?.[d]) { delete pl.daily[d]; await writePlayer(k, pl); n++; } }
+      return send(200, { ok: true, cleared: n });
+    }
     const [key, p, err, name] = await auth(body);
     if (err) return send(400, { error: err });
 

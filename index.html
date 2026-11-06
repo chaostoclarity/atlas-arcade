@@ -771,7 +771,7 @@ const HERO_ART = `<svg class="trail-art" viewBox="0 0 320 200" aria-hidden="true
   <circle class="x" cx="242" cy="156" r="9"/>
 </svg>`;
 function dailyHomeCard(){
-  const date = dayStr(), mine = store.get(DAILY_LOCAL(), {})[date];
+  const date = dayStr(), mine = dailyMine(date);
   return `<a class="dcard" href="#daily"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.daily}</svg></span>
     <div><span class="kick">Daily Challenge · ${esc(dayLabel(date))}</span><b>${mine ? `Today: ${mine.score} points` : 'Ten questions. Same for everyone.'}</b>
     <p>${mine ? `${mine.correct} of 10 right. See how you rank, and come back tomorrow.` : 'One try a day, mixing every kind of game. Post your score and see where you rank.'}</p></div>
@@ -2420,6 +2420,8 @@ const dayLabel = s => new Date(s + 'T12:00:00').toLocaleDateString(undefined, {w
 function seeded(str){ let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++){ h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
   return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
 const DAILY_LOCAL = () => 'aa-daily:' + S.player;
+const DAILY_V = 2; // bump when a day's questions change, so earlier local results don't block a replay
+const dailyMine = date => { const r = store.get(DAILY_LOCAL(), {})[date]; return r && r.v === DAILY_V ? r : null; };
 const DTAG = {find:'Find It', shape:'Shape', capitals:'Capitals', flags:'Flags', stateflag:'State flags', nature:'Nature', culture:'Culture', trivia:'Trivia'};
 // Mostly Easy and Medium with fair wrong answers; only the last question is Hard, with look-alike wrong answers.
 const DAILY_PLAN = [['find',1], ['flags',1], ['capitals',2], ['shape',1], ['culture',1], ['nature',2], ['trivia',2], ['find',2], ['flags',2], ['capitals',3]];
@@ -2470,7 +2472,7 @@ function modeDaily(){
   return () => { alive = false; stop?.(); dailyPick = null; };
 }
 function dailyIntro(){
-  const date = dayStr(), mine = store.get(DAILY_LOCAL(), {})[date];
+  const date = dayStr(), mine = dailyMine(date);
   stage.innerHTML = ''; const W = universe('world'); const map = makeMap(stage, {set:'world', items:W, active:new Set(W.map(d => d.id)), onPick:d => dailyPick?.(d)}); dailyPick = null;
   if (mine) return dailyResults(date, mine, map);
   panel.innerHTML = head('Daily Challenge', `${dayLabel(date)}. Ten questions from every kind of game. Everyone gets the same ones today.`) +
@@ -2528,7 +2530,7 @@ function dailyPlay(date, map){
   $('#dnx').onclick = () => { i++; ask(); };
   async function finish(){
     clearInterval(tm.iv); reset();
-    const res = {score, correct:right, ms:Date.now() - T0, marks, at:Date.now()};
+    const res = {score, correct:right, ms:Date.now() - T0, marks, at:Date.now(), v:DAILY_V};
     const all = store.get(DAILY_LOCAL(), {}); all[date] = res; store.set(DAILY_LOCAL(), all);
     const me = onlineMe(); let posted = false, note = '';
     if (me && ONLINE_OK){ try { await api({op:'daily', name:me.name, pin:me.pin, date, ...res}); posted = true; } catch (x) { note = x.code === 409 ? 'You already posted a score for today, so this one stays on this device.' : x.message; } }
