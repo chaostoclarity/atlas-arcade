@@ -398,6 +398,59 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
   .hc:not(.slim) .ic svg{width:36px;height:36px}
   .hc:not(.slim) b{margin:0;font-size:20px}
 }
+
+/* ===== Daily Challenge, online, leaderboard ===== */
+.dcard{--h:85;--tint:oklch(var(--tile-l) var(--tile-c) var(--h));--ico:oklch(var(--icon-l) var(--icon-c) var(--h));display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;
+  text-decoration:none;color:var(--ink);background:var(--panel);border:2px solid var(--ico);border-radius:22px;padding:18px 22px;box-shadow:var(--shadow);transition:transform .15s}
+.dcard:hover{transform:translateY(-2px)}
+.dcard .ic{width:68px;height:68px;border-radius:18px;background:var(--tint);display:grid;place-items:center}
+.dcard .ic svg{width:38px;height:38px;fill:none;stroke:var(--ico);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dcard .kick{font-size:12.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--ico)}
+.dcard b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.01em;margin:3px 0 4px}
+.dcard p{margin:0;color:var(--muted);font-size:15px}
+.dcard .go{background:var(--ico);color:var(--panel);font-weight:800;border-radius:999px;padding:12px 20px;white-space:nowrap}
+.olcard{display:grid;gap:8px;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg)}
+.olcard.on{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.olcard.on small{display:block;color:var(--muted);font-size:12.5px}.olcard.on b{font-size:18px}
+.olcard p{margin:0;color:var(--muted);font-size:14.5px}
+.olrow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:8px;align-items:end}
+.olrow label{display:grid;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.olrow input{font:inherit;font-size:17px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);min-width:0;text-transform:none;letter-spacing:0}
+.olrow .btn{grid-column:1/-1}
+.olerr{color:var(--bad);font-weight:600}.olerr:empty{display:none}
+.mono{font-family:var(--mono)}
+a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center}
+a.btn.primary{color:#fff}
+.main[data-mode="daily"] .bigflag{max-height:30vh;width:auto;max-width:100%}
+.dlist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.btn.big{font-size:18px;padding:14px 22px}
+.dhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dtag{background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:13px;border-radius:999px;padding:5px 12px;text-transform:uppercase;letter-spacing:.06em}
+.dprog{color:var(--muted);font-weight:600}.dsc{margin-left:auto;font-weight:600;color:var(--muted)}.dsc b{color:var(--ink);font-size:20px}
+.dbar{height:6px;border-radius:9px;background:var(--line);overflow:hidden}.dbar i{display:block;height:100%;background:var(--accent);transition:width .1s linear}
+.dsil{display:grid;place-items:center;background:var(--bg);border-radius:12px;padding:10px}
+.dsil svg.csil{width:100%;max-width:300px;height:auto}
+.dsil svg.csil path{fill:var(--accent);stroke:none}
+.dtriv{font-family:var(--body);font-weight:700;font-size:clamp(18px,2.4vw,22px);line-height:1.3;display:block}
+.dfx{font-size:15px;color:var(--ink);margin-top:10px}
+.dres{display:grid;justify-items:center;text-align:center;gap:4px;background:var(--accent-soft);border-radius:16px;padding:18px}
+.dres small{text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:12.5px;color:var(--accent)}
+.dres b{font-family:var(--display);font-size:56px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.dres span{color:var(--muted);font-weight:600}.dres .sq,.lb small{letter-spacing:.12em;color:var(--accent)}
+.dres .sq{font-size:22px}
+.dcopy{width:100%;min-height:70px;font:inherit;border-radius:10px;border:1px solid var(--line);padding:8px;background:var(--panel);color:var(--ink)}
+.dh{margin:6px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.lb{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.lb li{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.lb li.me{border-color:var(--accent);background:var(--accent-soft)}
+.lb .rk{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.lb li:nth-child(1) .rk{color:#c98a00}.lb li:nth-child(2) .rk{color:#8a96a3}.lb li:nth-child(3) .rk{color:#b0643a}
+.lb .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .vl{display:grid;justify-items:end;line-height:1.15}.lb .vl b{font-size:18px;font-variant-numeric:tabular-nums}.lb .vl small{font-size:12px;color:var(--muted)}
+.main[data-mode="leaders"] .stage{background:var(--bg);overflow-y:auto}
+.lbwrap{padding:18px;display:grid;gap:12px;max-width:640px;margin:0 auto}
+.lbwrap h2{margin:0;font-family:var(--display);font-size:26px;letter-spacing:-.01em}
+@media (max-width:560px){ .dcard{grid-template-columns:auto minmax(0,1fr);padding:16px} .dcard .go{grid-column:1/-1;justify-self:start} .dcard .ic{width:56px;height:56px} }
 /* Landscape (iPad sideways, laptops, phones sideways): panel beside a map that fills the screen height */
 @media (orientation:landscape) and (min-width:640px){
   .app{height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:420px;grid-template-rows:auto auto minmax(0,1fr)}
@@ -522,6 +575,7 @@ let H = 600;
 function fitH(){ const r = document.getElementById('stage')?.getBoundingClientRect(); if (r && r.width > 50 && r.height > 50) H = Math.round(Math.max(380, Math.min(1500, W * r.height / r.width))); }
 const MODES = [
   {id:'home', name:'Home', sub:'All games'},
+  {id:'daily', name:'Daily', sub:'Same 10 for everyone'},
   {id:'atlas', name:'Atlas', sub:'True size + facts'},
   {id:'find', name:'Find It', sub:'Tap the country'},
   {id:'label', name:'Label It', sub:'Place the names'},
@@ -534,9 +588,12 @@ const MODES = [
   {id:'chase', name:'The Chase', sub:'Catch the thief'},
   {id:'culture', name:'Culture', sub:'Landmarks and famous places'},
   {id:'trivia', name:'Trivia', sub:'Sunset Trivia questions'},
-  {id:'players', name:'Players', sub:'Scoreboard'},
+  {id:'leaders', name:'Leaderboard', sub:'Everyone online'},
+  {id:'players', name:'Players', sub:'This device'},
 ];
 const ICON = {
+  daily:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 12.6l1.1 2.2 2.4.3-1.8 1.7.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z"/>',
+  leaders:'<path d="M3 20h18"/><rect x="9" y="7" width="6" height="13" rx="1"/><rect x="3.5" y="12" width="5.5" height="8" rx="1"/><rect x="15" y="10" width="5.5" height="10" rx="1"/><path d="M12 2.5l.9 1.8 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/>',
   home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
   atlas:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18"/>',
   find:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
@@ -573,7 +630,7 @@ if (!PLAYERS){ PLAYERS = ['Player 1']; const old = store.get('aa-stats', null); 
 if (!PLAYERS.includes(S.player)) S.player = PLAYERS[0];
 let ST = store.get('aa-stats:' + S.player, {});
 const saveS = () => store.set('aa-prefs', {set:S.set, diff:S.diff, capDir:S.capDir, flagDir:S.flagDir, player:S.player, natFmt:S.natFmt, natType:S.natType, layer:S.layer, trivCat:S.trivCat, culFmt:S.culFmt, culKind:S.culKind});
-function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); }
+function rec(mode, id, ok){ const k = mode+':'+id, v = ST[k] || [0,0]; ok ? v[0]++ : v[1]++; ST[k] = v; store.set('aa-stats:' + S.player, ST); syncSoon(); }
 function switchPlayer(name){ S.player = name; ST = store.get('aa-stats:' + name, {}); saveS(); renderPlayers(); route(); }
 function weight(mode, id){ const v = ST[mode+':'+id]; return v ? Math.min(3, Math.max(.3, 1 + v[1] - .5*v[0])) : 1.5; }
 const RECENT = {};
@@ -688,7 +745,7 @@ const HOME = {
   nature:{h:140, d:'Find rivers, lakes, seas, mountains, deserts and islands.'},
   culture:{h:55, d:'Famous landmarks and places, from the Eiffel Tower to the Alamo.'},
   trivia:{h:320, d:'Geography and US States questions from Sunset Trivia.'},
-  players:{h:225, d:'Add players and see who knows the world best.'},
+  players:{h:225, d:'Players who share this device, side by side.'},
 };
 const HOME_SECS = [['Map games', ['find','label','shape','hot','chain','atlas']], ['Facts and places', ['capitals','flags','nature','culture','trivia']]];
 function homeStats(){
@@ -712,6 +769,13 @@ const HERO_ART = `<svg class="trail-art" viewBox="0 0 320 200" aria-hidden="true
   <circle class="dot" cx="52" cy="84" r="6"/><circle class="dot" cx="150" cy="96" r="5"/><circle class="dot" cx="242" cy="52" r="5"/>
   <circle class="x" cx="242" cy="156" r="9"/>
 </svg>`;
+function dailyHomeCard(){
+  const date = dayStr(), mine = store.get(DAILY_LOCAL(), {})[date];
+  return `<a class="dcard" href="#daily"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.daily}</svg></span>
+    <div><span class="kick">Daily Challenge · ${esc(dayLabel(date))}</span><b>${mine ? `Today: ${mine.score} points` : 'Ten questions. Same for everyone.'}</b>
+    <p>${mine ? `${mine.correct} of 10 right. See how you rank, and come back tomorrow.` : 'One try a day, mixing every kind of game. Post your score and see where you rank.'}</p></div>
+    <span class="go">${mine ? 'See the board' : 'Play'} <span aria-hidden="true">→</span></span></a>`;
+}
 function modeHome(){
   const hv = $('#homeview'), stats = C.length ? homeStats() : {};
   const saved = store.get('aa-chase:' + S.player, null);
@@ -725,8 +789,9 @@ function modeHome(){
     <a class="hero" href="#chase"><div><span class="kick">Detective game</span><b>The Chase</b>
       <p>A thief stole a priceless treasure. Question witnesses, follow the clues city to city, name the suspect, and make the arrest before time runs out.</p>
       ${caseLine}<span class="go">${saved && saved.v === 2 ? 'Resume the case' : 'Take a case'} <span aria-hidden="true">→</span></span></div>${HERO_ART}</a>
+    ${dailyHomeCard()}
     ${HOME_SECS.map(([title, ids]) => `<section class="hsec"><h3>${title}</h3><div class="hgrid">${ids.map(card).join('')}</div></section>`).join('')}
-    <section class="hsec"><h3>Players</h3><a class="hc slim" href="#players" style="--h:${HOME.players.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.players}</svg></span><div><b>Scoreboard</b><p>${HOME.players.d}</p></div><span class="arw" aria-hidden="true">›</span></a></section>
+    <section class="hsec"><h3>Players</h3><div class="hgrid"><a class="hc slim" href="#leaders" style="--h:45"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.leaders}</svg></span><div><b>Leaderboard</b><p>Everyone who plays online, ranked by game and by daily score.</p></div><span class="arw" aria-hidden="true">›</span></a><a class="hc slim" href="#players" style="--h:${HOME.players.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.players}</svg></span><div><b>This device</b><p>${HOME.players.d}</p></div><span class="arw" aria-hidden="true">›</span></a></div></section>
   </div>`;
   return () => { hv.innerHTML = ''; };
 }
@@ -738,7 +803,7 @@ function route(){
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.m === mode ? 'page' : 'false'));
   document.querySelectorAll('#diff button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === S.diff));
   $('#set').value = S.set;
-  $('#pickers').classList.toggle('off', mode === 'atlas');
+  $('#pickers').classList.toggle('off', ['atlas', 'daily', 'leaders'].includes(mode));
   $('#set').hidden = mode === 'trivia'; document.querySelector('label[for="set"]').hidden = mode === 'trivia';
   $('#set').disabled = false;
   document.querySelector('.main').dataset.mode = mode; document.querySelector('.app').dataset.mode = mode;
@@ -748,7 +813,7 @@ function route(){
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
   setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode === 'culture' ? 'culture-' + S.culFmt : mode), 50);
-  cleanup = ({home:modeHome, atlas:modeAtlas, players:modePlayers, nature:modeNature, chase:modeChase, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  cleanup = ({home:modeHome, daily:modeDaily, leaders:modeLeaders, atlas:modeAtlas, players:modePlayers, nature:modeNature, chase:modeChase, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
@@ -766,6 +831,17 @@ function flagImg(d, cls=''){ const s = flagSrc(d); return s ? `<img class="${cls
 
 // ---------- rules ----------
 const RULES = {
+  daily:{title:'Daily Challenge', goal:'Ten questions, the same for everyone today. Get the best score.', steps:[
+    'You get one try per day. A new challenge starts at midnight.',
+    'The questions mix every kind of game: find a country, flags, capitals, shapes, landmarks, nature and trivia.',
+    'Most are Medium. The last two are Hard.',
+    'Each right answer is worth 100 points, plus up to 50 more for answering quickly. The bar shows how much speed bonus is left.',
+    'Join the leaderboard with a name and PIN to post your score. Then copy your result to share it with your group.']},
+  leaders:{title:'Leaderboard', goal:'See how you stack up against everyone who plays online.', steps:[
+    'Join with a name everyone will see and a 4-digit PIN. Use the same name and PIN on any other device.',
+    'Pick a board: today\'s challenge, the last 7 days, all games, or one game.',
+    'Game boards count places you know: answered right at least twice and more often than missed.',
+    'Your progress updates on its own a few seconds after you play.']},
   atlas:{title:'Atlas', goal:'See how big places really are, and learn facts about any country.', steps:[
     'The red shape is the overlay. Type in the top box to pick a different country or US state.',
     'The blue-outlined country underneath is the base. Change it in the second box.',
@@ -2281,6 +2357,224 @@ function triviaRound(preset){
   seg.onclick = e => { const v = e.target.dataset.v; if (!v) return; S.trivCat = v; saveS(); route(); };
   panel.firstElementChild.after(seg);
   const mt = panel.querySelector('.meter span'); if (mt) mt.innerHTML = mt.innerHTML.replace(/ in .*$/, ' questions at this level');
+}
+
+// ---- Online: players with a name + PIN, progress sync, public leaderboard ----
+const API = '/api/aa';
+const ONLINE_OK = /^https?:$/.test(location.protocol) && !/claude|anthropic|usercontent/.test(location.hostname);
+const onlineKey = () => 'aa-online:' + S.player;
+const onlineMe = () => store.get(onlineKey(), null);
+async function api(body){
+  if (!ONLINE_OK) throw new Error('Leaderboards work in the web app at atlas-arcade-black.vercel.app.');
+  let r;
+  try { r = await fetch(API, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {cache:'no-store'}); }
+  catch { throw new Error('Could not reach the leaderboard. Check your connection.'); }
+  const j = await r.json().catch(() => ({error:'The leaderboard sent a bad reply.'}));
+  if (!r.ok) { const e = new Error(j.error || 'Something went wrong.'); e.code = r.status; e.data = j; throw e; }
+  return j;
+}
+function masteryOf(st){
+  const kn = m => Object.keys(st).filter(k => k.startsWith(m + ':') && st[k][0] >= 2 && st[k][0] > st[k][1]).length;
+  const solved = pre => Object.keys(st).filter(k => k.startsWith(pre) && st[k][0] > 0 && st[k][0] >= st[k][1]).length;
+  return {find:kn('find'), label:kn('label'), shape:kn('shape'), hot:kn('hot'), chain:Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length,
+    capitals:kn('cap-c2cap'), flags:kn('flag-flag2c'), nature:solved('nat-'), culture:solved('cul-'), trivia:solved('trivia:'), chase:(st['chase-cases:all'] || [0])[0]};
+}
+let syncT = null;
+function syncSoon(){
+  const me = onlineMe(); if (!me || !ONLINE_OK) return;
+  clearTimeout(syncT); syncT = setTimeout(() => api({op:'sync', name:me.name, pin:me.pin, mastery:masteryOf(ST)}).catch(() => {}), 4000);
+}
+// Sign-in card. onDone(me) runs after a successful join or sign-in.
+function onlineCard(host, onDone, {compact=false} = {}){
+  const me = onlineMe();
+  if (!ONLINE_OK){ host.innerHTML = `<div class="olcard"><b>Leaderboards are online only</b><p>Open the web app at <span class="mono">atlas-arcade-black.vercel.app</span> to post scores and see everyone's.</p></div>`; return; }
+  if (me){
+    host.innerHTML = `<div class="olcard on"><div><small>On the leaderboard as</small><b>${esc(me.name)}</b></div><button class="btn" type="button" data-out>Sign out</button></div>`;
+    host.querySelector('[data-out]').onclick = () => { store.set(onlineKey(), null); onlineCard(host, onDone, {compact}); };
+    return;
+  }
+  host.innerHTML = `<form class="olcard" autocomplete="off">
+    <b>Join the leaderboard</b>
+    <p>${compact ? 'Pick a name and a 4-digit PIN.' : 'Pick a name everyone will see and a 4-digit PIN. A new name creates your player. Use the same name and PIN to sign in on another device.'}</p>
+    <div class="olrow"><label><span>Name</span><input name="n" maxlength="16" value="${esc(/^Player \d+$/.test(S.player) ? '' : S.player)}" placeholder="Nickname" required></label>
+    <label><span>PIN</span><input name="p" inputmode="numeric" pattern="\\d{4}" maxlength="4" placeholder="4 digits" required></label>
+    <button class="btn primary" type="submit">Join or sign in</button></div><p class="olerr" role="alert"></p></form>`;
+  const f = host.querySelector('form'), err = f.querySelector('.olerr');
+  f.onsubmit = async e => { e.preventDefault(); err.textContent = '';
+    const name = f.n.value.trim(), pin = f.p.value.trim();
+    if (!/^\d{4}$/.test(pin)) { err.textContent = 'The PIN is 4 digits.'; return; }
+    const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = 'Checking…';
+    try { const j = await api({op:'join', name, pin}); const meNew = {name:j.player.name, pin}; store.set(onlineKey(), meNew);
+      toast(j.created ? `Welcome, ${j.player.name}` : `Signed in as ${j.player.name}`, 'good'); syncSoon(); onlineCard(host, onDone, {compact}); onDone?.(meNew); }
+    catch (x) { err.textContent = x.message; btn.disabled = false; btn.textContent = 'Join or sign in'; } };
+}
+
+// ---- Daily Challenge: the same 10 questions for everyone each day ----
+const dayStr = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const dayLabel = s => new Date(s + 'T12:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+function seeded(str){ let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++){ h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+const DAILY_LOCAL = () => 'aa-daily:' + S.player;
+const DTAG = {find:'Find It', shape:'Shape', capitals:'Capitals', flags:'Flags', stateflag:'State flags', nature:'Nature', culture:'Culture', trivia:'Trivia'};
+// Mostly Medium; the last two questions are Hard.
+const DAILY_PLAN = [['find',2], ['flags',2], ['capitals',2], ['shape',2], ['culture',2], ['nature',2], ['trivia',2], ['stateflag',2], ['find',3], ['capitals',3]];
+function buildDaily(date){
+  const rng = seeded('atlas-daily:' + date), keepR = Math.random, keepD = S.diff;
+  Math.random = rng; S.diff = 'medium';
+  try {
+    const used = new Set(), byId = a => a.slice().sort((x, y) => x.id < y.id ? -1 : 1);
+    const pick = (arr) => { const a = byId(arr).filter(d => !used.has(d.id)); const d = a[Math.floor(rng() * a.length)]; used.add(d.id); return d; };
+    const countries = C.filter(d => d.sov && inSet(d, 'world'));
+    const atTier = (arr, t) => arr.filter(d => t === 3 ? tier(d) === 3 : tier(d) <= t && (t === 1 || tier(d) === 2));
+    return DAILY_PLAN.map(([kind, t]) => {
+      if (kind === 'find'){ const q = pick(atTier(countries, t).filter(d => (d.a || 0) > 8000)); return {kind, t, q}; }
+      if (kind === 'flags'){ const q = pick(atTier(countries, t).filter(d => flagSrc(d))); return {kind, t, q, ch:shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, countries, d => d.n).map(d => ({html:esc(d.n), ok:false}))])}; }
+      if (kind === 'stateflag'){ const q = pick(US.filter(d => tier(d) <= t)); return {kind, t, q, ch:shuffle([{html:esc(q.n), ok:true}, ...shuffle(nearestTo(q, US, 6)).slice(0, 3).map(d => ({html:esc(d.n), ok:false}))])}; }
+      if (kind === 'capitals'){ const q = pick(atTier(countries, t).filter(d => d.cap?.length)); return {kind, t, q, ch:capChoices(q)}; }
+      if (kind === 'shape'){ const q = pick(atTier(countries, t).filter(d => silSVG(d))); return {kind, t, q, ch:placeChoices(q)}; }
+      if (kind === 'culture'){ const P = byId(CUL.filter(d => d.t === t)); const q = pick(P); return {kind, t, q, ch:shuffle([q, ...nearestTo(q, CUL, 3)].map(d => ({html:esc(d.n), ok:d === q})))}; }
+      if (kind === 'nature'){ const P = byId(NAT.filter(f => f.tier === t && f.type !== 'land')); const q = pick(P);
+        return {kind, t, q, ch:shuffle([q, ...nearestTo(q, NAT.filter(f => f.type === q.type), 3)].map(d => ({html:esc(d.n), ok:d === q})))}; }
+      if (kind === 'trivia'){ const q = pick(TRIV.filter(x => x.t === t)); return {kind, t, q, ch:shuffle([{html:esc(q.a), ok:true}, ...q.ch.map(c => ({html:esc(c), ok:false}))])}; }
+    });
+  } finally { Math.random = keepR; S.diff = keepD; }
+}
+function dailyLoad(){
+  const cul = CUL ? Promise.resolve() : fetch('data/culture.json').then(r => r.json()).then(a => CUL = a.map(d => {
+    d.cen = d.ll; d.pt = d.ll; d.f = d.ft = {type:'Feature', geometry:{type:'Point', coordinates:d.ll}}; d.type = 'landmark'; return d; }));
+  const tri = TRIV ? Promise.resolve() : fetch('data/trivia.json').then(r => r.json()).then(a => TRIV = a);
+  return Promise.all([cul, tri, loadNature()]);
+}
+let dailyPick = null;
+const squares = marks => marks.split('').map(m => m === '1' ? '■' : '□').join('');
+function modeDaily(){
+  panel.innerHTML = '<div class="loading">Loading today\'s challenge…</div>';
+  let alive = true, stop = null;
+  dailyLoad().then(() => { if (alive) stop = dailyIntro(); }).catch(() => { panel.innerHTML = '<p>Could not load the challenge. Reload the page to try again.</p>'; });
+  return () => { alive = false; stop?.(); dailyPick = null; };
+}
+function dailyIntro(){
+  const date = dayStr(), mine = store.get(DAILY_LOCAL(), {})[date];
+  stage.innerHTML = ''; const W = universe('world'); const map = makeMap(stage, {set:'world', items:W, active:new Set(W.map(d => d.id)), onPick:d => dailyPick?.(d)}); dailyPick = null;
+  if (mine) return dailyResults(date, mine, map);
+  panel.innerHTML = head('Daily Challenge', `${dayLabel(date)}. Ten questions from every kind of game. Everyone gets the same ones today.`) +
+    `<ul class="dlist"><li>One try per day. Mostly Medium, and the last two are Hard.</li><li>100 points for each right answer, plus up to 50 for answering fast.</li><li>Your score goes on the public leaderboard.</li></ul>
+     <div id="olc"></div><div class="row"><button class="btn primary big" id="dgo" type="button">Start today's challenge</button></div><p class="note" id="dnote"></p>`;
+  onlineCard($('#olc'), null, {compact:true});
+  $('#dnote').textContent = onlineMe() || !ONLINE_OK ? '' : 'You can play without joining, but your score will only be saved on this device.';
+  $('#dgo').onclick = () => dailyPlay(date, map);
+}
+function dailyPlay(date, map){
+  const Q = buildDaily(date); let i = 0, score = 0, right = 0, marks = '', t0 = 0, locked = false; const T0 = Date.now();
+  const tm = { iv:null };
+  panel.innerHTML = `<div class="dhead"><span class="dtag" id="dtag"></span><span class="dprog"><b id="dqi">1</b>/10</span><span class="dsc">Score <b id="dsc">0</b></span></div>
+    <div class="dbar"><i id="dbar"></i></div><div id="dask"></div><div id="dans"></div>
+    <div class="row"><button class="btn primary" id="dnx" type="button" hidden>Next</button></div>`;
+  const reset = () => { map.clear('sel'); map.clear('ok'); map.clear('reveal'); map.clearLabels(); map.natG.selectAll('*').remove(); map.reset(); dailyPick = null; };
+  const tick = () => { if (!$('#dbar')) return clearInterval(tm.iv); const s = (Date.now() - t0) / 1000; $('#dbar').style.width = Math.max(0, 100 - s / 20 * 100) + '%'; };
+  function ask(){
+    if (i >= Q.length) return finish();
+    const it = Q[i], q = it.q; locked = false; t0 = Date.now(); $('#dnx').hidden = true; reset();
+    $('#dtag').textContent = DTAG[it.kind] + (it.t === 3 ? ' · Hard' : ''); $('#dqi').textContent = i + 1;
+    clearInterval(tm.iv); tm.iv = setInterval(tick, 100); tick();
+    const P = (small, big) => `<div class="prompt"><small>${small}</small><strong>${big}</strong></div>`;
+    const ask = $('#dask'), ans = $('#dans'); ans.innerHTML = '';
+    if (it.kind === 'find'){ ask.innerHTML = P('Tap this country on the map', esc(q.n)) + '<p class="note">One tap. Zoom in first if you need to.</p>';
+      dailyPick = d => { if (locked || d.type !== 'country') return; answer(d.id === q.id, d); }; return; }
+    if (it.kind === 'flags') ask.innerHTML = `<img class="bigflag" src="${flagSrc(q)}" alt="Mystery flag">` + P('Which country flies this flag?', '');
+    else if (it.kind === 'stateflag') ask.innerHTML = `<img class="bigflag" src="${flagSrc(q)}" alt="Mystery state flag">` + P('Which US state flies this flag?', '');
+    else if (it.kind === 'capitals') ask.innerHTML = P('What is the capital of', esc(q.n));
+    else if (it.kind === 'shape') ask.innerHTML = `<div class="dsil">${silSVG(q)}</div>` + P('Which country has this shape?', '');
+    else if (it.kind === 'culture'){ ask.innerHTML = P(`A ${CWORD[q.k]} in ${esc(q.city)}`, 'Which landmark is at the pin?'); drawPins(map, [q]); map.focus([q], 4); }
+    else if (it.kind === 'nature'){ ask.innerHTML = P(`Name this ${NWORD[q.type]}`, 'What is highlighted?'); const n = drawNature(map, [q], null); n.cls(q.id, 'ok'); map.focus([q], q.isPt ? 5 : 6); }
+    else if (it.kind === 'trivia') ask.innerHTML = P(q.c === 'us' ? 'US States' : 'Geography', `<span class="dtriv">${esc(q.q)}</span>`);
+    ask.querySelectorAll('.prompt strong:empty').forEach(s => s.remove());
+    const g = document.createElement('div'); g.className = 'choices'; ans.appendChild(g);
+    it.ch.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.innerHTML = c.html; b._ok = c.ok;
+      b.onclick = () => { if (locked) return; g.querySelectorAll('.choice').forEach(x => { if (x._ok) x.classList.add('ok'); }); if (!c.ok) b.classList.add('bad'); answer(c.ok); }; g.appendChild(b); });
+  }
+  function answer(ok, tapped){
+    if (locked) return; locked = true; clearInterval(tm.iv);
+    const it = Q[i], q = it.q, secs = (Date.now() - t0) / 1000, pts = ok ? 100 + Math.round(50 * Math.max(0, 1 - secs / 20)) : 0;
+    score += pts; right += ok ? 1 : 0; marks += ok ? '1' : '0'; $('#dsc').textContent = score;
+    toast(ok ? `Right. +${pts}` : 'Not quite', ok ? 'good' : 'bad');
+    if (it.kind === 'find' || it.kind === 'flags' || it.kind === 'capitals' || it.kind === 'shape'){
+      if (tapped && !ok) map.flash(tapped.id);
+      map.cls(q.id, ok ? 'ok' : 'reveal'); map.label(q, it.kind === 'capitals' ? `${q.cap[0]} (${q.n})` : q.n, ok ? '' : 'miss'); map.focus([q], 5);
+      if (it.kind === 'find') $('#dans').innerHTML = `<div class="prompt" style="background:${ok ? 'var(--good-fill)' : 'var(--bad-fill)'}"><small>${ok ? 'Correct' : 'It was here'}</small><strong>${esc(q.n)}</strong></div>`;
+    }
+    if (it.kind === 'stateflag'){ map.label({cen:q.cen, id:'st'}, q.n, 'above'); }
+    if (it.kind === 'culture'){ map.label({cen:q.ll, id:'lbl'}, q.n, 'above'); $('#dans').insertAdjacentHTML('beforeend', `<p class="note dfx">${esc(q.fx)}</p>`); }
+    if (it.kind === 'nature') map.label(q, q.n);
+    if (it.kind === 'trivia' && q.ex) $('#dans').insertAdjacentHTML('beforeend', `<p class="note dfx">${esc(q.ex)}</p>`);
+    $('#dnx').hidden = false; $('#dnx').textContent = i === Q.length - 1 ? 'See my score' : 'Next'; $('#dnx').focus({preventScroll:true});
+  }
+  $('#dnx').onclick = () => { i++; ask(); };
+  async function finish(){
+    clearInterval(tm.iv); reset();
+    const res = {score, correct:right, ms:Date.now() - T0, marks, at:Date.now()};
+    const all = store.get(DAILY_LOCAL(), {}); all[date] = res; store.set(DAILY_LOCAL(), all);
+    const me = onlineMe(); let posted = false, note = '';
+    if (me && ONLINE_OK){ try { await api({op:'daily', name:me.name, pin:me.pin, date, ...res}); posted = true; } catch (x) { note = x.code === 409 ? 'You already posted a score for today, so this one stays on this device.' : x.message; } }
+    dailyResults(date, res, map, {posted, note});
+  }
+  ask();
+  return () => clearInterval(tm.iv);
+}
+function dailyResults(date, res, map, {posted, note} = {}){
+  const share = `Atlas Arcade Daily, ${dayLabel(date)}\n${squares(res.marks)} ${res.correct}/10, ${res.score} points`;
+  panel.innerHTML = head('Daily Challenge', `${dayLabel(date)}. Come back tomorrow for a new one.`) +
+    `<div class="dres"><small>Your score</small><b>${res.score}</b><span>${res.correct} of 10 right · ${Math.round(res.ms / 1000)} seconds</span><span class="sq" aria-label="${res.correct} right">${squares(res.marks)}</span></div>
+     <div class="row"><button class="btn" id="dshare" type="button">Copy result to share</button><a class="btn" href="#leaders">Full leaderboard</a></div>
+     ${note ? `<p class="note">${esc(note)}</p>` : ''}<div id="olc"></div><h3 class="dh">Today's leaderboard</h3><div id="dboard"><div class="loading">Loading…</div></div>`;
+  $('#dshare').onclick = async () => { try { await navigator.clipboard.writeText(share); toast('Copied. Paste it in your group chat.', 'good'); } catch { const ta = document.createElement('textarea'); ta.className = 'dcopy'; ta.readOnly = true; ta.value = share; $('#dshare').after(ta); ta.select(); toast('Select the text and copy it.'); } };
+  const me = onlineMe();
+  if (!me){ onlineCard($('#olc'), async m => { try { await api({op:'daily', name:m.name, pin:m.pin, date, ...res}); toast('Score posted', 'good'); } catch (x) { toast(x.message, 'bad'); } loadBoard(); }, {compact:true}); }
+  if (posted) toast('Score posted', 'good');
+  async function loadBoard(){
+    const host = $('#dboard'); if (!host) return;
+    try { const j = await api(); const rows = j.players.filter(p => p.daily[date]).map(p => ({name:p.name, ...p.daily[date]})).sort((a, b) => b.score - a.score || a.ms - b.ms);
+      host.innerHTML = rows.length ? boardTable(rows.slice(0, 50), r => `<b>${r.score}</b><small>${squares(r.marks)}</small>`) : '<p class="note">No scores yet today. You could be first.</p>'; }
+    catch (x) { host.innerHTML = `<p class="note">${esc(x.message)}</p>`; }
+  }
+  loadBoard();
+  return null;
+}
+function boardTable(rows, val){
+  const me = onlineMe()?.name;
+  return `<ol class="lb">${rows.map((r, k) => `<li class="${r.name === me ? 'me' : ''}"><span class="rk">${k + 1}</span><span class="nm">${esc(r.name)}</span><span class="vl">${val(r)}</span></li>`).join('')}</ol>`;
+}
+
+// ---- Public leaderboard ----
+const LB_BOARDS = [['today', "Today's challenge"], ['week', 'Daily, last 7 days'], ['total', 'All games'], ['find','Find It'], ['label','Label It'], ['shape','Shape'], ['hot','Hot & Cold'], ['chain','Border Chain'],
+  ['capitals','Capitals'], ['flags','Flags'], ['nature','Nature'], ['culture','Culture'], ['trivia','Trivia'], ['chase','The Chase']];
+const LB_UNIT = {chain:'chains', nature:'found', culture:'found', trivia:'right', chase:'cases', total:'points'};
+function modeLeaders(){
+  let alive = true;
+  syncSoon();
+  panel.innerHTML = head('Leaderboard', 'Everyone who plays Atlas Arcade online. Game boards count places you know (right at least twice, and more often than missed). The Chase counts cases solved.') +
+    `<div id="olc"></div><label class="lab" for="lbsel">Board</label><select id="lbsel">${LB_BOARDS.map(([v, l]) => `<option value="${v}"${(S.lb || 'today') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
+     <div class="row"><a class="btn primary" href="#daily">Play today's challenge</a></div>`;
+  stage.innerHTML = '<div class="lbwrap"><h2 id="lbt"></h2><div id="lbbody"><div class="loading">Loading the leaderboard…</div></div></div>';
+  onlineCard($('#olc'), () => setTimeout(draw, 4500));
+  let data = null;
+  $('#lbsel').onchange = e => { S.lb = e.target.value; saveS(); render(); };
+  function render(){
+    const b = S.lb || 'today'; $('#lbt').textContent = LB_BOARDS.find(x => x[0] === b)[1];
+    if (!data) return; const date = dayStr(), host = $('#lbbody');
+    let rows;
+    if (b === 'today') rows = data.players.filter(p => p.daily[date]).map(p => ({name:p.name, v:p.daily[date].score, s:p.daily[date].ms, m:p.daily[date].marks}));
+    else if (b === 'week'){ const days = [...Array(7)].map((_, k) => dayStr(new Date(Date.now() - k * 864e5)));
+      rows = data.players.map(p => { const ds = days.filter(d => p.daily[d]); return {name:p.name, v:ds.reduce((a, d) => a + p.daily[d].score, 0), n:ds.length}; }).filter(r => r.n); }
+    else if (b === 'total') rows = data.players.map(p => ({name:p.name, v:Object.values(p.mastery).reduce((a, x) => a + x, 0)})).filter(r => r.v);
+    else rows = data.players.map(p => ({name:p.name, v:p.mastery[b] || 0})).filter(r => r.v);
+    rows.sort((x, y) => y.v - x.v || (x.s || 0) - (y.s || 0));
+    host.innerHTML = rows.length ? boardTable(rows.slice(0, 100), r => `<b>${r.v}</b><small>${b === 'today' ? squares(r.m) : b === 'week' ? `${r.n} day${r.n === 1 ? '' : 's'}` : (LB_UNIT[b] || 'known')}</small>`)
+      : `<p class="note">Nobody is on this board yet.${b === 'today' ? ' Play today\'s challenge to be first.' : ''}</p>`;
+  }
+  async function draw(){ try { data = await api(); if (alive) render(); } catch (x) { if (alive) $('#lbbody').innerHTML = `<p class="note">${esc(x.message)}</p>`; } }
+  draw(); render();
+  return () => { alive = false; };
 }
 
 // ---- Players scoreboard ----
