@@ -835,7 +835,7 @@ const RULES = {
   daily:{title:'Daily Challenge', goal:'Ten questions, the same for everyone today. Get the best score.', steps:[
     'You get one try per day. A new challenge starts at midnight.',
     'The questions mix every kind of game: find a country, flags, capitals, shapes, landmarks, nature and trivia.',
-    'Most are Medium. The last two are Hard.',
+    'Most are Easy or Medium. Only the last one is Hard.',
     'Each right answer is worth 100 points, plus up to 50 more for answering quickly. The bar shows how much speed bonus is left.',
     'Join the leaderboard with a name and PIN to post your score. Then copy your result to share it with your group.']},
   leaders:{title:'Leaderboard', goal:'See how you stack up against everyone who plays online.', steps:[
@@ -2421,8 +2421,8 @@ function seeded(str){ let h = 1779033703 ^ str.length; for (let i = 0; i < str.l
   return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
 const DAILY_LOCAL = () => 'aa-daily:' + S.player;
 const DTAG = {find:'Find It', shape:'Shape', capitals:'Capitals', flags:'Flags', stateflag:'State flags', nature:'Nature', culture:'Culture', trivia:'Trivia'};
-// Mostly Medium; the last two questions are Hard.
-const DAILY_PLAN = [['find',2], ['flags',2], ['capitals',2], ['shape',2], ['culture',2], ['nature',2], ['trivia',2], ['stateflag',2], ['find',3], ['capitals',3]];
+// Mostly Easy and Medium with fair wrong answers; only the last question is Hard, with look-alike wrong answers.
+const DAILY_PLAN = [['find',1], ['flags',1], ['capitals',2], ['shape',1], ['culture',1], ['nature',2], ['trivia',2], ['find',2], ['flags',2], ['capitals',3]];
 function buildDaily(date){
   const rng = seeded('atlas-daily:' + date), keepR = Math.random, keepD = S.diff;
   Math.random = rng; S.diff = 'medium';
@@ -2430,17 +2430,28 @@ function buildDaily(date){
     const used = new Set(), byId = a => a.slice().sort((x, y) => x.id < y.id ? -1 : 1);
     const pick = (arr) => { const a = byId(arr).filter(d => !used.has(d.id)); const d = a[Math.floor(rng() * a.length)]; used.add(d.id); return d; };
     const countries = C.filter(d => d.sov && inSet(d, 'world'));
-    const atTier = (arr, t) => arr.filter(d => t === 3 ? tier(d) === 3 : tier(d) <= t && (t === 1 || tier(d) === 2));
+    const atTier = (arr, t) => arr.filter(d => t === 1 ? tier(d) === 1 : tier(d) === t);
+    const known = countries.filter(d => tier(d) <= 2);
+    // Fair wrong answers: well-known places, not neighbors. 'far' = other regions (easiest), otherwise same region.
+    const fair = (q, n, far) => { const nb = new Set([...(q.b0 || []), ...(q.b || [])]);
+      const ok = d => d !== q && !nb.has(d.id) && (far ? d.r !== q.r : d.r === q.r);
+      let out = shuffle(byId(known.filter(ok))).slice(0, n);
+      if (out.length < n) out = out.concat(shuffle(byId(known.filter(d => d !== q && !nb.has(d.id) && !out.includes(d)))).slice(0, n - out.length));
+      return out; };
+    const opts = (q, ds, f = d => d.n) => shuffle([{html:esc(f(q)), ok:true}, ...ds.map(d => ({html:esc(f(d)), ok:false}))]);
     return DAILY_PLAN.map(([kind, t]) => {
-      if (kind === 'find'){ const q = pick(atTier(countries, t).filter(d => (d.a || 0) > 8000)); return {kind, t, q}; }
-      if (kind === 'flags'){ const q = pick(atTier(countries, t).filter(d => flagSrc(d))); return {kind, t, q, ch:shuffle([{html:esc(q.n), ok:true}, ...distract(q, 3, countries, d => d.n).map(d => ({html:esc(d.n), ok:false}))])}; }
-      if (kind === 'stateflag'){ const q = pick(US.filter(d => tier(d) <= t)); return {kind, t, q, ch:shuffle([{html:esc(q.n), ok:true}, ...shuffle(nearestTo(q, US, 6)).slice(0, 3).map(d => ({html:esc(d.n), ok:false}))])}; }
-      if (kind === 'capitals'){ const q = pick(atTier(countries, t).filter(d => d.cap?.length)); return {kind, t, q, ch:capChoices(q)}; }
-      if (kind === 'shape'){ const q = pick(atTier(countries, t).filter(d => silSVG(d))); return {kind, t, q, ch:placeChoices(q)}; }
-      if (kind === 'culture'){ const P = byId(CUL.filter(d => d.t === t)); const q = pick(P); return {kind, t, q, ch:shuffle([q, ...nearestTo(q, CUL, 3)].map(d => ({html:esc(d.n), ok:d === q})))}; }
-      if (kind === 'nature'){ const P = byId(NAT.filter(f => f.tier === t && f.type !== 'land')); const q = pick(P);
-        return {kind, t, q, ch:shuffle([q, ...nearestTo(q, NAT.filter(f => f.type === q.type), 3)].map(d => ({html:esc(d.n), ok:d === q})))}; }
-      if (kind === 'trivia'){ const q = pick(TRIV.filter(x => x.t === t)); return {kind, t, q, ch:shuffle([{html:esc(q.a), ok:true}, ...q.ch.map(c => ({html:esc(c), ok:false}))])}; }
+      if (kind === 'find'){ const q = pick(atTier(countries, t).filter(d => (d.a || 0) > 30000)); return {kind, t, q}; }
+      if (kind === 'flags'){ const q = pick(atTier(countries, t).filter(d => flagSrc(d))); return {kind, t, q, ch:opts(q, fair(q, 3, t === 1))}; }
+      if (kind === 'capitals'){ const q = pick(atTier(countries, t).filter(d => d.cap?.length));
+        return {kind, t, q, ch: t === 3 ? capChoices(q) : opts(q, fair(q, 3, false).filter(d => d.cap?.length), d => d.cap[0])}; }
+      if (kind === 'shape'){ const q = pick(atTier(countries, t).filter(d => silSVG(d) && (d.a || 0) > 30000)); return {kind, t, q, ch:opts(q, fair(q, 3, false))}; }
+      if (kind === 'culture'){ const q = pick(CUL.filter(d => d.t === t));
+        const ds = shuffle(byId(CUL.filter(d => d.t <= 2 && d.c !== q.c && d.k === q.k))).slice(0, 3);
+        return {kind, t, q, ch:opts(q, ds.length === 3 ? ds : shuffle(byId(CUL.filter(d => d.t <= 2 && d.c !== q.c))).slice(0, 3))}; }
+      if (kind === 'nature'){ const q = pick(NAT.filter(f => f.tier === t && ['river','lake','sea','mountain','desert'].includes(f.type)));
+        const ds = shuffle(byId(NAT.filter(f => f.type === q.type && f !== q && f.tier <= 2 && d3.geoDistance(f.cen, q.cen) * 6371 > 2500))).slice(0, 3);
+        return {kind, t, q, ch:opts(q, ds)}; }
+      if (kind === 'trivia'){ const q = pick(TRIV.filter(x => x.t === t && x.c === 'world')); return {kind, t, q, ch:shuffle([{html:esc(q.a), ok:true}, ...q.ch.map(c => ({html:esc(c), ok:false}))])}; }
     });
   } finally { Math.random = keepR; S.diff = keepD; }
 }
@@ -2463,7 +2474,7 @@ function dailyIntro(){
   stage.innerHTML = ''; const W = universe('world'); const map = makeMap(stage, {set:'world', items:W, active:new Set(W.map(d => d.id)), onPick:d => dailyPick?.(d)}); dailyPick = null;
   if (mine) return dailyResults(date, mine, map);
   panel.innerHTML = head('Daily Challenge', `${dayLabel(date)}. Ten questions from every kind of game. Everyone gets the same ones today.`) +
-    `<ul class="dlist"><li>One try per day. Mostly Medium, and the last two are Hard.</li><li>100 points for each right answer, plus up to 50 for answering fast.</li><li>Your score goes on the public leaderboard.</li></ul>
+    `<ul class="dlist"><li>One try per day. Easy and Medium questions, then one Hard one to finish.</li><li>100 points for each right answer, plus up to 50 for answering fast.</li><li>Your score goes on the public leaderboard.</li></ul>
      <div id="olc"></div><div class="row"><button class="btn primary big" id="dgo" type="button">Start today's challenge</button></div><p class="note" id="dnote"></p>`;
   onlineCard($('#olc'), null, {compact:true});
   $('#dnote').textContent = onlineMe() || !ONLINE_OK ? '' : 'You can play without joining, but your score will only be saved on this device.';
