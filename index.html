@@ -787,10 +787,10 @@ function modeHome(){
     : cases ? `<span class="case-on">${cases} case${cases === 1 ? '' : 's'} solved. Rank: ${rankOf(cases)}</span>` : '';
   hv.innerHTML = `<div class="home-in">
     <div class="hello"><h2>Hi, ${esc(S.player)}. Where to today?</h2><p>Pick a game. The map and difficulty at the top apply to every game, and each one explains its rules the first time you play.</p></div>
+    ${dailyHomeCard()}
     <a class="hero" href="#chase"><div><span class="kick">Detective game</span><b>The Chase</b>
       <p>A thief stole a priceless treasure. Question witnesses, follow the clues city to city, name the suspect, and make the arrest before time runs out.</p>
       ${caseLine}<span class="go">${saved && saved.v === 2 ? 'Resume the case' : 'Take a case'} <span aria-hidden="true">→</span></span></div>${HERO_ART}</a>
-    ${dailyHomeCard()}
     ${HOME_SECS.map(([title, ids]) => `<section class="hsec"><h3>${title}</h3><div class="hgrid">${ids.map(card).join('')}</div></section>`).join('')}
     <section class="hsec"><h3>Players</h3><div class="hgrid"><a class="hc slim" href="#leaders" style="--h:45"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.leaders}</svg></span><div><b>Leaderboard</b><p>Everyone who plays online, ranked by game and by daily score.</p></div><span class="arw" aria-hidden="true">›</span></a><a class="hc slim" href="#players" style="--h:${HOME.players.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.players}</svg></span><div><b>This device</b><p>${HOME.players.d}</p></div><span class="arw" aria-hidden="true">›</span></a></div></section>
   </div>`;
