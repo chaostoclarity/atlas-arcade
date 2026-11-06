@@ -1,0 +1,8 @@
+{
+  "name": "atlas-arcade",
+  "private": true,
+  "description": "Geography games. Static site plus one serverless function for leaderboards.",
+  "dependencies": {
+    "@vercel/blob": "2.8.2"
+  }
+}
