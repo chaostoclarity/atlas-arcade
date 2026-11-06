@@ -30,6 +30,7 @@
   --accent:#2952c4; --accent-ink:#ffffff; --accent-soft:#e3eafc;
   --good:#2b8a3e; --good-fill:#51cf66; --bad:#d6336c; --bad-fill:#ff8fab; --hint:#e8590c; --hint-fill:#ffa94d;
   --halo:#ffffff;
+  --tile-l:94%; --tile-c:.05; --icon-l:46%; --icon-c:.17; --hero-a:#1d3f9e; --hero-b:#2f62d8; --hero-ink:#ffffff; --hero-soft:rgba(255,255,255,.72);
   --shadow:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);
   --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -43,7 +44,8 @@
   --act:#6d6233; --act-hover:#9a8a2c;
   --accent:#7ea4ff; --accent-ink:#0a1430; --accent-soft:#1c2c52;
   --good:#69db7c; --good-fill:#2f9e44; --bad:#ff8ab0; --bad-fill:#c2255c; --hint:#ffc078; --hint-fill:#e8590c;
-  --halo:#0c141b; --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.25); color-scheme:dark}}
+  --halo:#0c141b; --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.25);
+  --tile-l:30%; --tile-c:.06; --icon-l:84%; --icon-c:.13; --hero-a:#16264f; --hero-b:#24418c; --hero-ink:#eef3ff; --hero-soft:rgba(238,243,255,.72); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0c141b; --panel:#141f29; --ink:#e6eef3; --muted:#93a5b2; --line:#24333f; --line-strong:#34485a;
   --space:#0a1219; --water:#123a55; --sphere:#123a55; --ocean-edge:#1b4b6b;
@@ -52,7 +54,8 @@
   --act:#6d6233; --act-hover:#9a8a2c;
   --accent:#7ea4ff; --accent-ink:#0a1430; --accent-soft:#1c2c52;
   --good:#69db7c; --good-fill:#2f9e44; --bad:#ff8ab0; --bad-fill:#c2255c; --hint:#ffc078; --hint-fill:#e8590c;
-  --halo:#0c141b; --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.25); color-scheme:dark}
+  --halo:#0c141b; --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.25);
+  --tile-l:30%; --tile-c:.06; --icon-l:84%; --icon-c:.13; --hero-a:#16264f; --hero-b:#24418c; --hero-ink:#eef3ff; --hero-soft:rgba(238,243,255,.72); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 button,input,select{font:inherit;color:inherit}
@@ -337,6 +340,64 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .qbar{display:none}
 .modehead{display:grid;gap:10px}
+
+/* ===== Home screen ===== */
+.homeview{display:none}
+.main[data-mode="home"]{display:block}
+.main[data-mode="home"] .panel,.main[data-mode="home"] .stage{display:none}
+.main[data-mode="home"] .homeview{display:block}
+.app[data-mode="home"] .tabs{display:none}
+.app[data-mode="home"] #help{display:none}
+.brand{cursor:pointer;text-decoration:none;color:inherit}
+.homeview{padding-block:6px 28px}
+.home-in{max-width:1180px;margin:0 auto;display:grid;gap:26px}
+.hello h2{font-family:var(--display);font-weight:800;font-size:clamp(28px,4.4vw,42px);letter-spacing:-.025em;line-height:1.05;margin:0;text-wrap:balance}
+.hello p{margin:6px 0 0;color:var(--muted);font-size:16px;max-width:60ch}
+.hsec{display:grid;gap:12px}
+.hsec > h3{margin:0;font-size:12.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.hc{--tint:oklch(var(--tile-l) var(--tile-c) var(--h));--ico:oklch(var(--icon-l) var(--icon-c) var(--h));
+  display:grid;grid-template-rows:auto auto 1fr auto;gap:8px;text-decoration:none;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);min-width:0;
+  transition:transform .15s,box-shadow .15s,border-color .15s}
+.hc:hover{transform:translateY(-2px);border-color:var(--ico);box-shadow:0 6px 20px rgba(16,24,40,.1)}
+.hc:focus-visible{outline:3px solid var(--ico);outline-offset:2px}
+.hc .ic{width:72px;height:72px;border-radius:20px;background:var(--tint);display:grid;place-items:center}
+.hc .ic svg{width:40px;height:40px;fill:none;stroke:var(--ico);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hc b{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;line-height:1.1;margin-top:4px}
+.hc p{margin:0;color:var(--muted);font-size:15px;line-height:1.45}
+.hc .st{font-size:13px;font-weight:700;color:var(--ico);display:flex;align-items:center;gap:6px}
+.hc .st:empty{display:none}
+.hc .st.new{color:var(--muted);font-weight:600}
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;gap:18px;text-decoration:none;
+  color:var(--hero-ink);background:linear-gradient(135deg,var(--hero-a),var(--hero-b));border-radius:24px;padding:26px 28px;
+  box-shadow:0 10px 30px rgba(29,63,158,.25);overflow:hidden;position:relative;transition:transform .15s}
+.hero:hover{transform:translateY(-2px)}
+.hero:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.hero .kick{font-size:12.5px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--hero-soft)}
+.hero b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);letter-spacing:-.025em;line-height:1;margin:6px 0 10px}
+.hero p{margin:0;color:var(--hero-soft);font-size:16.5px;line-height:1.5;max-width:46ch}
+.hero .go{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:var(--hero-ink);color:var(--hero-a);font-weight:800;border-radius:999px;padding:12px 22px;font-size:16px}
+.hero .case-on{display:block;margin-top:12px;font-weight:700;color:var(--hero-ink);font-size:14.5px}
+.hero svg.trail-art{width:100%;height:auto;max-height:220px}
+.trail-art .land{fill:rgba(255,255,255,.1);stroke:rgba(255,255,255,.22)}
+.trail-art .rt{fill:none;stroke:var(--hero-ink);stroke-width:2.4;stroke-dasharray:2 7;stroke-linecap:round;opacity:.9}
+.trail-art .dot{fill:var(--hero-ink)}
+.trail-art .x{fill:#ffb020;stroke:var(--hero-ink);stroke-width:2}
+.hc.slim{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto;align-items:center;gap:16px}
+.hc.slim .ic{width:56px;height:56px;border-radius:16px}.hc.slim .ic svg{width:30px;height:30px}
+.hc.slim b{margin:0}.hc.slim p{font-size:14.5px}
+.hc.slim .arw{font-size:26px;color:var(--muted)}
+@media (max-width:699px){
+  .hero{grid-template-columns:1fr;padding:22px 20px;gap:6px}
+  .hero svg.trail-art{order:-1;max-height:120px}
+}
+@media (max-width:560px){
+  .hc:not(.slim){grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:16px;row-gap:3px;align-items:center;padding:16px}
+  .hc:not(.slim) .ic{grid-row:1/4;width:64px;height:64px;align-self:start}
+  .hc:not(.slim) .ic svg{width:36px;height:36px}
+  .hc:not(.slim) b{margin:0;font-size:20px}
+}
 /* Landscape (iPad sideways, laptops, phones sideways): panel beside a map that fills the screen height */
 @media (orientation:landscape) and (min-width:640px){
   .app{height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:420px;grid-template-rows:auto auto minmax(0,1fr)}
@@ -344,6 +405,7 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
   .panel{overflow-y:auto;align-content:start;overscroll-behavior:contain}
   .stage{height:auto;min-height:0}
   .main[data-mode="players"] .stage{height:auto;align-self:start}
+  .main[data-mode="home"]{overflow-y:auto;overscroll-behavior:contain}
 }
 @media (orientation:landscape) and (max-height:520px){
   .app{padding-block:6px 8px;gap:6px;min-height:0}
@@ -377,6 +439,9 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
   .stage{border:0;border-radius:0;height:min(64vh,120vw)}
   .main[data-mode="capitals"] .stage,.main[data-mode="flags"] .stage{height:min(46vh,90vw)}
   .main[data-mode="players"] .stage{order:-1;height:auto}
+  .homeview{padding-block:18px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .home-in{gap:22px}
+  .hgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
   .btn{min-height:50px;font-size:17px;padding:10px 20px;border-radius:12px}
   .choices{gap:10px}.choice{min-height:68px;font-size:19px;padding:14px;border-radius:14px}
   .choice.flag img{max-width:100%}
@@ -430,10 +495,10 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
 
 <div class="app">
   <header class="top">
-    <div class="brand">
+    <a class="brand" href="#home" aria-label="Atlas Arcade home">
       <svg class="globe-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="var(--accent)"/><path d="M2 16h28M16 2c-5 5-5 23 0 28M16 2c5 5 5 23 0 28M5 8.5c6 3 16 3 22 0M5 23.5c6-3 16-3 22 0" fill="none" stroke="var(--accent-ink)" stroke-width="1.6"/></svg>
       <h1>Atlas <em>Arcade</em></h1>
-    </div>
+    </a>
     <div class="pickers" id="pickers">
       <label for="set" class="lab" style="margin:0">Map</label>
       <select id="set"></select>
@@ -445,6 +510,7 @@ details.notes li small{display:block;color:var(--muted);font-size:12px}
   <main class="main">
     <section class="panel" id="panel"><div class="loading">Loading the world…</div></section>
     <section class="stage" id="stage"></section>
+    <section class="homeview" id="homeview" aria-label="Choose a game"></section>
   </main>
 </div>
 
@@ -455,6 +521,7 @@ let H = 600;
 // Size the map's drawing box to the stage it lands in, so it fills portrait and landscape screens alike.
 function fitH(){ const r = document.getElementById('stage')?.getBoundingClientRect(); if (r && r.width > 50 && r.height > 50) H = Math.round(Math.max(380, Math.min(1500, W * r.height / r.width))); }
 const MODES = [
+  {id:'home', name:'Home', sub:'All games'},
   {id:'atlas', name:'Atlas', sub:'True size + facts'},
   {id:'find', name:'Find It', sub:'Tap the country'},
   {id:'label', name:'Label It', sub:'Place the names'},
@@ -470,6 +537,7 @@ const MODES = [
   {id:'players', name:'Players', sub:'Scoreboard'},
 ];
 const ICON = {
+  home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
   atlas:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18"/>',
   find:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
   label:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
@@ -604,28 +672,83 @@ function renderPlayers(adding=false){
     $('#npx').onclick = () => renderPlayers(); $('#np').focus(); return;
   }
   w.innerHTML = `<label for="pl" class="lab" style="margin:0">Player</label><select id="pl">${PLAYERS.map(p => `<option${p === S.player ? ' selected' : ''}>${esc(p)}</option>`).join('')}<option value="__new">+ Add player</option></select><button type="button" class="helpbtn" id="help" aria-label="How to play" title="How to play">?</button>`;
-  $('#help').onclick = () => { const m = document.querySelector('.main').dataset.mode || 'find'; showRules(m === 'nature' ? 'nature-' + S.natFmt : m === 'culture' ? 'culture-' + S.culFmt : m); };
+  $('#help').onclick = () => { const m = document.querySelector('.main').dataset.mode || 'home'; showRules(m === 'nature' ? 'nature-' + S.natFmt : m === 'culture' ? 'culture-' + S.culFmt : m); };
   $('#pl').onchange = e => { if (e.target.value === '__new'){ e.target.value = S.player; renderPlayers(true); } else switchPlayer(e.target.value); };
+}
+// ---------- home screen ----------
+const HOME = {
+  atlas:{h:250, d:'Drag any country over the US to see how big it really is, then read its quick facts.'},
+  find:{h:200, d:'We name a place and you tap it on the map. Quick rounds, easy to start.'},
+  label:{h:150, d:'Drag each name onto the right spot until the whole map is labeled.'},
+  shape:{h:300, d:'Name the country from its outline alone. Clues help if you get stuck.'},
+  hot:{h:35, d:'Guess the mystery country. Every guess tells you how far away you are and which way to go.'},
+  chain:{h:175, d:'Get from one country to another by crossing borders, in as few steps as you can.'},
+  capitals:{h:265, d:'Match countries and their capital cities. The wrong answers are close calls.'},
+  flags:{h:15, d:'Name the country, or the US state, from its flag.'},
+  nature:{h:140, d:'Find rivers, lakes, seas, mountains, deserts and islands.'},
+  culture:{h:55, d:'Famous landmarks and places, from the Eiffel Tower to the Alamo.'},
+  trivia:{h:320, d:'Geography and US States questions from Sunset Trivia.'},
+  players:{h:225, d:'Add players and see who knows the world best.'},
+};
+const HOME_SECS = [['Map games', ['find','label','shape','hot','chain','atlas']], ['Facts and places', ['capitals','flags','nature','culture','trivia']]];
+function homeStats(){
+  const st = ST, items = universe(S.set).filter(d => inSet(d, S.set));
+  const kn = m => items.filter(d => { const v = st[m+':'+d.id]; return v && v[0] >= 2 && v[0] > v[1]; }).length;
+  const solved = pre => Object.keys(st).filter(k => k.startsWith(pre) && st[k][0] > 0 && st[k][0] >= st[k][1]).length;
+  const of = n => n ? `${n} of ${items.length} known` : '';
+  const cnt = (n, one, many) => n ? `${n} ${n === 1 ? one : many}` : '';
+  return {
+    find: of(kn('find')), label: of(kn('label')), shape: of(kn('shape')), hot: of(kn('hot')),
+    chain: cnt(Object.keys(st).filter(k => k.startsWith('chain:') && st[k][0] > 0).length, 'chain solved', 'chains solved'),
+    capitals: of(kn('cap-c2cap')), flags: of(kn('flag-flag2c')),
+    nature: cnt(solved('nat-'), 'feature found', 'features found'), culture: cnt(solved('cul-'), 'place found', 'places found'), trivia: cnt(solved('trivia:'), 'question right', 'questions right'),
+  };
+}
+const HERO_ART = `<svg class="trail-art" viewBox="0 0 320 200" aria-hidden="true">
+  <path class="land" d="M18 62c22-20 62-26 88-14 14 7 10 22 26 26 18 5 22 24 8 34-16 12-42 4-58 16-14 10-34 8-46-4-16-16-34-36-18-58z"/>
+  <path class="land" d="M168 30c30-12 76-10 104 6 22 13 30 38 14 52-12 11-36 4-48 16-10 10-4 30-20 38-20 10-42-6-48-26-6-18 6-30-6-44-10-12-14-32 4-42z"/>
+  <path class="land" d="M206 150c14-6 36-4 46 6 8 8 2 22-12 24-16 3-36-2-40-14-2-7 0-13 6-16z"/>
+  <path class="rt" d="M52 84C88 58 120 120 150 96s52-62 92-44 18 66 0 104"/>
+  <circle class="dot" cx="52" cy="84" r="6"/><circle class="dot" cx="150" cy="96" r="5"/><circle class="dot" cx="242" cy="52" r="5"/>
+  <circle class="x" cx="242" cy="156" r="9"/>
+</svg>`;
+function modeHome(){
+  const hv = $('#homeview'), stats = C.length ? homeStats() : {};
+  const saved = store.get('aa-chase:' + S.player, null);
+  const cases = (ST['chase-cases:all'] || [0])[0];
+  const card = id => { const m = MODES.find(x => x.id === id), H_ = HOME[id];
+    return `<a class="hc" href="#${id}" style="--h:${H_.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[id]}</svg></span><b>${m.name}</b><p>${H_.d}</p><span class="st${stats[id] ? '' : ' new'}">${stats[id] || (id === 'atlas' ? '' : 'New to you')}</span></a>`; };
+  const caseLine = saved && saved.v === 2 ? `<span class="case-on">Case in progress${CAPS ? ' in ' + esc(cityOf(saved.wrong || saved.route[saved.at])) : ''}. ${Math.max(0, saved.budget - saved.used)} hours left.</span>`
+    : cases ? `<span class="case-on">${cases} case${cases === 1 ? '' : 's'} solved. Rank: ${rankOf(cases)}</span>` : '';
+  hv.innerHTML = `<div class="home-in">
+    <div class="hello"><h2>Hi, ${esc(S.player)}. Where to today?</h2><p>Pick a game. The map and difficulty at the top apply to every game, and each one explains its rules the first time you play.</p></div>
+    <a class="hero" href="#chase"><div><span class="kick">Detective game</span><b>The Chase</b>
+      <p>A thief stole a priceless treasure. Question witnesses, follow the clues city to city, name the suspect, and make the arrest before time runs out.</p>
+      ${caseLine}<span class="go">${saved && saved.v === 2 ? 'Resume the case' : 'Take a case'} <span aria-hidden="true">→</span></span></div>${HERO_ART}</a>
+    ${HOME_SECS.map(([title, ids]) => `<section class="hsec"><h3>${title}</h3><div class="hgrid">${ids.map(card).join('')}</div></section>`).join('')}
+    <section class="hsec"><h3>Players</h3><a class="hc slim" href="#players" style="--h:${HOME.players.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.players}</svg></span><div><b>Scoreboard</b><p>${HOME.players.d}</p></div><span class="arw" aria-hidden="true">›</span></a></section>
+  </div>`;
+  return () => { hv.innerHTML = ''; };
 }
 let cleanup = null;
 function route(){
   document.querySelector('.modal')?.remove(); LIVE = [];
-  const m = (location.hash || '#find').slice(1);
-  const mode = MODES.find(x => x.id === m) ? m : 'find';
+  const m = (location.hash || '#home').slice(1);
+  const mode = MODES.find(x => x.id === m) ? m : 'home';
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.m === mode ? 'page' : 'false'));
   document.querySelectorAll('#diff button').forEach(b => b.setAttribute('aria-pressed', b.dataset.d === S.diff));
   $('#set').value = S.set;
   $('#pickers').classList.toggle('off', mode === 'atlas');
   $('#set').hidden = mode === 'trivia'; document.querySelector('label[for="set"]').hidden = mode === 'trivia';
   $('#set').disabled = false;
-  document.querySelector('.main').dataset.mode = mode;
+  document.querySelector('.main').dataset.mode = mode; document.querySelector('.app').dataset.mode = mode;
   document.querySelector('.main').dataset.set = S.set;
   document.querySelector('.app').dataset.shell = ['find','label','atlas','hot','chain','nature'].includes(mode) || (mode === 'culture' && S.culFmt !== 'where') ? 'sheet' : '';
   if (cleanup) { try{ cleanup(); }catch(e){} cleanup = null; }
   panel.innerHTML = ''; stage.innerHTML = '';
   fitH();
   setTimeout(() => maybeRules(mode === 'nature' ? 'nature-' + S.natFmt : mode === 'culture' ? 'culture-' + S.culFmt : mode), 50);
-  cleanup = ({atlas:modeAtlas, players:modePlayers, nature:modeNature, chase:modeChase, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
+  cleanup = ({home:modeHome, atlas:modeAtlas, players:modePlayers, nature:modeNature, chase:modeChase, culture:modeCulture, trivia:modeTrivia, find:modeFind, label:modeLabel, shape:modeShape, hot:modeHot, chain:modeChain, capitals:modeCapitals, flags:modeFlags})[mode]() || null;
 }
 function head(title, how, mode, items){
   const k = mode && items ? known(mode, items) : null;
