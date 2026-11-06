@@ -682,6 +682,7 @@ const RULES = {
     'When you think you know, pick a flight. Longer flights take more hours.',
     'Wrong city? The witnesses there have seen nothing, and you have to fly back. That wastes time.',
     'Follow the trail to the last city and question a witness there to make the arrest, before the deadline.',
+    'One clue is rarely enough: the wrong flights share things with the right one, like the same currency or language. Combine clues before you fly.',
     'The Map and difficulty pickers set where the chase happens and how hard the clues are. On Easy, flight options show the country and appear on the map.',
     'Every case you solve raises your detective rank.']},
   'culture-pin':{title:'Culture: Pin It', goal:'Drop a pin where the landmark is.', steps:[
@@ -1587,6 +1588,15 @@ const THE_FIX = {'Tower Bridge':0,"St. Mark's Basilica":0,"Saint Basil's Cathedr
 const theName = n => n in THE_FIX ? (THE_FIX[n] ? 'the ' + n : n) : /^(The |St\. Peter)/.test(n) ? n : /(Tower|Bridge|Canal|Wall|Arch|Gate|Memorial|Building|Sign|Needle|Colosseum|Louvre|Parthenon|Kremlin|City|Pyramid|Mahal|Alhambra|Atomium|Army|Temple|Museum|House|Bell|Moai|Alamo|Strip|Quarter|Khalifa|Fountain|Opera|Windmills|Causeway|Cliffs|Apostles|Lines|Center|Mosque|Registan|Basilica|Cathedral|Monastery|Shrine|Statue|Château|Palace of|Dam|Sands|Square)$|^(Great|Statue|Leaning|Hollywood|Empire|Petronas|Sydney|CN|Kinderdijk|Giant|Cliffs|Twelve|Nazca|Hiroshima|Wright|Kennedy|Sheikh|Belém|Guggenheim|Shwedagon|Tiger|Florence|Cologne|Palace|Lincoln|Liberty|French|Las Vegas|Brooklyn|Willis|Space|Gateway|Golden Gate|Forbidden|Terracotta|Golden Temple|Hermitage|Panama|White|Little)/.test(n) && !/^(Buckingham|Edinburgh|Neuschwanstein|Bran|Gyeongbokgung|Hagia|Notre|Times|Red|Central|Shibuya|Walt|Fushimi|Mont-|Christ|Mount|Big Ben|Taipei|Marina|Niagara|Victoria|Iguazu|Table)/.test(n) ? 'the ' + n : n;
 const money = c => { if (!c) return c; if (c === 'Euro') return 'euros'; const last = c.split(' ').pop().toLowerCase();
   return /s$|^(yen|won|yuan|renminbi|baht|rand|kip|kyat|rupiah|riel|dong|som|tenge|manat|lari|dram|ngultrum|pa'anga|vatu|tala|kina|ariary|cedi|naira|kwacha|kwanza|loti|lilangeni|leone|ouguiya|dalasi)$/.test(last) ? c : c + 's'; };
+// "Thank you" in each language, so a witness can repeat a word instead of naming the language.
+const THANKS = {Spanish:'gracias',French:'merci',Portuguese:'obrigado',German:'danke',Italian:'grazie',Dutch:'dank je wel',Arabic:'shukran',Russian:'spasibo',Chinese:'xièxie',Swahili:'asante',Turkish:'teşekkürler',Swedish:'tack',Korean:'gamsahamnida',Afrikaans:'dankie',Slovak:'ďakujem',Albanian:'faleminderit',Greek:'efcharistó',Croatian:'hvala',Serbian:'hvala',Bosnian:'hvala',Montenegrin:'hvala',Slovene:'hvala',Vietnamese:'cảm ơn',Uzbek:'rahmat',Ukrainian:'dyakuyu',Thai:'khop khun',Tajik:'rahmat',Romanian:'mulțumesc',Moldavian:'mulțumesc',Polish:'dziękuję',Filipino:'salamat',Urdu:'shukriya','Norwegian Bokmål':'takk',Nepali:'dhanyabad',Mongolian:'bayarlalaa',Maltese:'grazzi',Malagasy:'misaotra',Macedonian:'blagodaram',Lithuanian:'ačiū',Latvian:'paldies',Lao:'khop chai',Kazakh:'rakhmet',Japanese:'arigatō',Hebrew:'toda',Irish:'go raibh maith agat','Persian (Farsi)':'mamnoon',Indonesian:'terima kasih',Malay:'terima kasih',Hindi:'dhanyavaad',Icelandic:'takk',Hungarian:'köszönöm','Haitian Creole':'mèsi',Georgian:'madloba',Finnish:'kiitos',Amharic:'ameseginalehu',Estonian:'aitäh',Danish:'tak',Czech:'děkuji',Khmer:'arkoun',Burmese:'kyay zu tin ba de',Bulgarian:'blagodarya',Belarusian:'dzyakuy',Bengali:'dhonnobad',Azerbaijani:'təşəkkür edirəm',Armenian:'shnorhakalutyun',Catalan:'gràcies',Dari:'tashakor',Pashto:'manana',Somali:'mahadsanid',Zulu:'ngiyabonga',Kinyarwanda:'murakoze',Kirundi:'murakoze',Sinhala:'istuti',Tamil:'nandri',Kyrgyz:'rakhmat',Turkmen:'sag bol',Samoan:"fa'afetai",Tongan:'mālō',Fijian:'vinaka',Dzongkha:'kadrinchey',Tigrinya:'yekenyeley',Sango:'singila',Lingala:'matondo',Shona:'ndatenda',Chewa:'zikomo',Tswana:'ke a leboga',Sotho:'kea leboha',Xhosa:'enkosi',Maldivian:'shukuriyya',Quechua:'sulpayki',Guaraní:'aguyje',Tetum:'obrigadu','Tok Pisin':'tenkyu',Sorani:'supas'};
+// Currency without the country's name: "Polish złoty" becomes "złoty", "United States dollar" becomes "dollars".
+const PLURAL = /^(dollar|peso|franc|dinar|pound|rupee|shilling|riyal|rial|dirham|euro|ruble|real|rand|krona|krone|lira|manat|sol|leone|lev|kwacha|dram|lari|lempira|quetzal|colón|córdoba|boliviano|guaraní|balboa|rufiyaa|naira|cedi|birr|kina|tala|pula|loti|somoni|tenge|hryvnia|forint|denar|mark|lek|kuna|leu|zloty)$/i;
+function bareMoney(c){
+  if (/CFA/.test(c)) return 'CFA francs'; if (/Eastern Caribbean/.test(c)) return 'Eastern Caribbean dollars'; if (c === 'Euro') return 'euros';
+  const w = c.split(' ').pop(), base = w.toLowerCase();
+  return PLURAL.test(base) ? base + (/s$/.test(base) ? '' : 's') : base;
+}
 function rankOf(w){ let r = RANKS[0][1]; for (const [n, name] of RANKS) if (w >= n) r = name; return r; }
 function fmtClock(h){ const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const tot = 8 + h, d = Math.floor(tot / 24), hr = Math.floor(tot % 24), ap = hr < 12 ? 'AM' : 'PM', h12 = hr % 12 || 12;
@@ -1605,11 +1615,12 @@ function chaseClues(d, T){
   const isUS = d.type === 'state', lvl = {easy:1, medium:2, hard:3}[S.diff];
   const lms = CUL.filter(l => isUS ? l.s === d.id : l.c === d.id).sort((a,b) => a.t - b.t);
   if (lms[0]) out.push({w:'guide', who:'Museum guide', h:lms[0].t, txt: lvl < 3 ? `${S_} asked me the best time to visit ${theName(lms[0].n)}.` : `${S_} wanted to see a famous ${CWORD[lms[0].k]} in ${lms[0].city}.`});
-  if (lvl < 3) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d});
+  if (lvl === 1) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d});
   if (!isUS){
-    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${T.pp} money into ${money(cur)}.`});
-    const langs = (d.lang || []).filter(l => l !== 'English'); const lang = langs[0] || (d.lang || [])[0];
-    if (lang) out.push({w:'clerk', who:'Hotel clerk', h: lang === 'English' ? 3 : 2, txt:`${S_} was practicing ${T.pp} ${lang} at the front desk.`});
+    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${T.pp} money into ${bareMoney(cur)}.`});
+    const langs = (d.lang || []).filter(l => l !== 'English'); const lang = langs.find(l => THANKS[l]) || langs[0];
+    if (lang && lvl === 1) out.push({w:'clerk', who:'Hotel clerk', h:1, txt:`${S_} was practicing ${T.pp} ${lang} at the front desk.`});
+    else if (lang && THANKS[lang]) out.push({w:'clerk', who:'Hotel clerk', h:2, txt:`${S_} kept saying "${THANKS[lang]}" to everyone. I think it means thank you.`});
   }
   const nats = (NAT || []).filter(f => (isUS ? f.s.includes(d.id) && f.s.length <= 3 : f.c.includes(d.id) && f.c.length <= 3) && f.tier <= Math.max(2, lvl)).sort((a,b) => a.tier - b.tier);
   const NV = {river:n => `${S_} asked about boat trips on the ${n}.`, lake:n => `${S_} wanted to go swimming in ${n}.`, sea:n => `${S_} was buying a ticket for a cruise on the ${n}.`, mountain:n => `${S_} bought hiking boots for the ${n}.`, desert:n => `${S_} wanted to ride a camel across the ${n}.`, land:n => `${S_} wanted to explore the ${n}.`, peak:n => `${S_} was training to climb ${n}.`, island:n => `${S_} was looking for a ferry to ${n}.`};
@@ -1690,8 +1701,18 @@ function chaseOptions(G){
   const cur = G.route[G.at], next = G.route[G.at + 1];
   const fair = new Set(pool().map(d => d.id));
   const P = (G.isUS ? US : C.filter(d => d.sov)).filter(d => CAPS[d.id] && fair.has(d.id) && !['ISR','PSE'].includes(d.id) && d !== cur && d !== next && !G.route.slice(0, G.at + 1).includes(d));
-  const near = P.sort((a,b) => G.km(cur,a) - G.km(cur,b)).slice(0, 10);
-  G.opts = shuffle([next, ...shuffle(near).slice(0, 3)]); G.optsAt = G.at;
+  let picks;
+  if (S.diff === 'easy'){ picks = shuffle(P.sort((a,b) => G.km(cur,a) - G.km(cur,b)).slice(0, 10)).slice(0, 3); }
+  else {
+    // Wrong answers that share something with the right one, so one clue alone is not enough.
+    const share = (a, b) => (a || []).some(x => (b || []).includes(x));
+    const langs = l => (l || []).filter(x => x !== 'English');
+    const score = d => (G.isUS ? 0 : 3 * share(d.cur, next.cur) + 3 * share(langs(d.lang), langs(next.lang)) + 2 * (d.sr === next.sr) + (d.r === next.r))
+      + 2 * ((next.b0 || next.b || []).includes(d.id)) - G.km(next, d) / 2500 + Math.random() * 1.5;
+    picks = P.map(d => [d, score(d)]).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => x[0]);
+    picks = shuffle(picks).slice(0, 3);
+  }
+  G.opts = shuffle([next, ...picks]); G.optsAt = G.at;
   return G.opts;
 }
 function chaseClock(G){
