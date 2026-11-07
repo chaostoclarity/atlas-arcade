@@ -783,14 +783,14 @@ function modeHome(){
   const cases = (ST['chase-cases:all'] || [0])[0];
   const card = id => { const m = MODES.find(x => x.id === id), H_ = HOME[id];
     return `<a class="hc" href="#${id}" style="--h:${H_.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[id]}</svg></span><b>${m.name}</b><p>${H_.d}</p><span class="st${stats[id] ? '' : ' new'}">${stats[id] || (id === 'atlas' ? '' : 'New to you')}</span></a>`; };
-  const caseLine = saved && saved.v === 2 ? `<span class="case-on">Case in progress${CAPS ? ' in ' + esc(cityOf(saved.wrong || saved.route[saved.at])) : ''}. ${Math.max(0, saved.budget - saved.used)} hours left.</span>`
+  const caseLine = saved && saved.v === 3 ? `<span class="case-on">Case in progress${CAPS ? ' in ' + esc(cityOf(saved.wrong || saved.route[saved.at])) : ''}. ${Math.max(0, saved.budget - saved.used)} hours left.</span>`
     : cases ? `<span class="case-on">${cases} case${cases === 1 ? '' : 's'} solved. Rank: ${rankOf(cases)}</span>` : '';
   hv.innerHTML = `<div class="home-in">
     <div class="hello"><h2>Hi, ${esc(S.player)}. Where to today?</h2><p>Pick a game. The map and difficulty at the top apply to every game, and each one explains its rules the first time you play.</p></div>
     ${dailyHomeCard()}
     <a class="hero" href="#chase"><div><span class="kick">Detective game</span><b>The Chase</b>
       <p>A thief stole a priceless treasure. Question witnesses, follow the clues city to city, name the suspect, and make the arrest before time runs out.</p>
-      ${caseLine}<span class="go">${saved && saved.v === 2 ? 'Resume the case' : 'Take a case'} <span aria-hidden="true">→</span></span></div>${HERO_ART}</a>
+      ${caseLine}<span class="go">${saved && saved.v === 3 ? 'Resume the case' : 'Take a case'} <span aria-hidden="true">→</span></span></div>${HERO_ART}</a>
     ${HOME_SECS.map(([title, ids]) => `<section class="hsec"><h3>${title}</h3><div class="hgrid">${ids.map(card).join('')}</div></section>`).join('')}
     <section class="hsec"><h3>Players</h3><div class="hgrid"><a class="hc slim" href="#leaders" style="--h:45"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.leaders}</svg></span><div><b>Leaderboard</b><p>Everyone who plays online, ranked by game and by daily score.</p></div><span class="arw" aria-hidden="true">›</span></a><a class="hc slim" href="#players" style="--h:${HOME.players.h}"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON.players}</svg></span><div><b>This device</b><p>${HOME.players.d}</p></div><span class="arw" aria-hidden="true">›</span></a></div></section>
   </div>`;
@@ -902,7 +902,7 @@ const RULES = {
     'Questions take time: 1 hour for the first in each city, then 2, then 3. You sleep from 11 PM to 7 AM.',
     'When you think you know, pick a flight. Longer flights take more hours.',
     'Wrong city? The witnesses there have seen nothing, and you have to fly back. That wastes time.',
-    'Open the Warrant panel and fill in what you learn about the suspect. When only one crook matches, issue the warrant. See the Dossiers for the whole gang.',
+    'Open the Warrant panel and fill in what you learn about the suspect. There are 16 crooks, and it takes three different clues about the suspect to narrow them to one. Then issue the warrant. See the Dossiers for the whole gang.',
     'Follow the trail to the last city and question a witness there to make the arrest, before the deadline. No warrant, or the wrong one, and the thief escapes.',
     'A run-in with the thief\'s gang means you are on the right track. Your case is saved if you leave and come back.',
     'One clue is rarely enough: the wrong flights share things with the right one, like the same currency or language. Combine clues before you fly.',
@@ -1790,18 +1790,23 @@ const TRAITS = {
   feature:{label:'Feature', vals:['Ring','Tattoo','Scar','Jewelry']},
   vehicle:{label:'Vehicle', vals:['Convertible','Motorcycle','Limousine','Race car']}
 };
-const THIEVES = [
-  {n:'Polly Glot', sex:'Female', hair:'Red', hobby:'Tennis', feature:'Ring', vehicle:'Convertible', d:'Speaks nine languages and lies in all of them.'},
-  {n:'Ann Tarctica', sex:'Female', hair:'Blond', hobby:'Mountain climbing', feature:'Tattoo', vehicle:'Motorcycle', d:'Cool under pressure, colder in person.'},
-  {n:'Lady Longitude', sex:'Female', hair:'Black', hobby:'Croquet', feature:'Jewelry', vehicle:'Limousine', d:'Always knows exactly where she is.'},
-  {n:'Dee Tour', sex:'Female', hair:'Brown', hobby:'Skydiving', feature:'Scar', vehicle:'Race car', d:'Never takes the direct route.'},
-  {n:'Ida Know', sex:'Female', hair:'Red', hobby:'Mountain climbing', feature:'Jewelry', vehicle:'Race car', d:'Answers every question with a shrug.'},
-  {n:'Rusty Compass', sex:'Male', hair:'Red', hobby:'Croquet', feature:'Tattoo', vehicle:'Convertible', d:'Never gets lost and never gets caught.'},
-  {n:'Max Mileage', sex:'Male', hair:'Brown', hobby:'Tennis', feature:'Ring', vehicle:'Motorcycle', d:'Has more frequent-flyer miles than anyone alive.'},
-  {n:'Sly Silkroad', sex:'Male', hair:'Black', hobby:'Skydiving', feature:'Scar', vehicle:'Limousine', d:'Smuggles anything along any trade route.'},
-  {n:'Hugh Mann-Geo', sex:'Male', hair:'Blond', hobby:'Tennis', feature:'Scar', vehicle:'Race car', d:'A master of disguise with a weakness for maps.'},
-  {n:'Phil Atlas', sex:'Male', hair:'Black', hobby:'Mountain climbing', feature:'Ring', vehicle:'Convertible', d:'Collects postcards from places he robbed.'}
-];
+// 16 suspects, 8 of each sex. Within a sex each trait has two values, and the combinations form an
+// even-parity code: any one or two traits always leave at least two suspects, and any three pick out one.
+const GANG_VALS = {
+  Female:{hair:['Red','Brown'], hobby:['Tennis','Skydiving'], feature:['Ring','Jewelry'], vehicle:['Convertible','Motorcycle']},
+  Male:{hair:['Black','Blond'], hobby:['Mountain climbing','Croquet'], feature:['Tattoo','Scar'], vehicle:['Limousine','Race car']}};
+const GANG_CODE = ['0000','0011','0101','0110','1001','1010','1100','1111'];
+const GANG_PEOPLE = {
+  Female:[['Polly Glot','Speaks nine languages and lies in all of them.'], ['Ann Tarctica','Cool under pressure, colder in person.'],
+    ['Lady Longitude','Always knows exactly where she is.'], ['Dee Tour','Never takes the direct route.'], ['Ida Know','Answers every question with a shrug.'],
+    ['Isla Hopper','Has a hideout on every island she has ever robbed.'], ['Terra Firma','Refuses to fly, yet somehow always gets away.'], ['Sierra Madre','Grew up in the mountains and climbs anything for a prize.']],
+  Male:[['Rusty Compass','Never gets lost and never gets caught.'], ['Max Mileage','Has more frequent-flyer miles than anyone alive.'],
+    ['Sly Silkroad','Smuggles anything along any trade route.'], ['Hugh Mann-Geo','A master of disguise with a weakness for maps.'], ['Phil Atlas','Collects postcards from places he robbed.'],
+    ['Al Titude','Steals only from the highest places on Earth.'], ['Archie Pelago','Hops from island to island one step ahead of the law.'], ['Cliff Hanger','Leaves every chase on a cliffhanger.']]};
+const THIEVES = ['Female','Male'].flatMap(sex => GANG_CODE.map((code, i) => {
+  const V = GANG_VALS[sex], [n, d] = GANG_PEOPLE[sex][i];
+  return {n, sex, hair:V.hair[+code[0]], hobby:V.hobby[+code[1]], feature:V.feature[+code[2]], vehicle:V.vehicle[+code[3]], d};
+}));
 const pron = t => t.sex === 'Female' ? {p:'she', o:'her', pp:'her'} : {p:'he', o:'him', pp:'his'};
 const TRAIT_LINE = {
   hair:v => p => `${p.P} had ${v.toLowerCase()} hair.`,
@@ -1832,7 +1837,7 @@ const WICON = {
   waiter:'<path d="M4 10h13v3a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 11h2a2 2 0 0 1 0 4h-2.5M7 3v4M11 3v4M15 3v4"/>',
   agent:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>'
 };
-const HELLO = {Spanish:'hola',French:'bonjour',Portuguese:'olá',German:'guten Tag',Italian:'ciao',Dutch:'hallo',Arabic:'marhaba',Russian:'privet',Chinese:'nǐ hǎo',Japanese:'konnichiwa',Korean:'annyeonghaseyo',Swahili:'jambo',Turkish:'merhaba',Greek:'yia sou',Hindi:'namaste',Thai:'sawasdee',Vietnamese:'xin chào',Polish:'cześć',Swedish:'hej',Norwegian:'hei',Danish:'hej',Finnish:'moi',Icelandic:'halló',Indonesian:'halo',Filipino:'kumusta',Persian:'salaam',Czech:'ahoj',Hungarian:'szia',Romanian:'bună',Ukrainian:'pryvit',Malay:'apa khabar',Irish:'dia duit',Hebrew:'shalom',Nepali:'namaste',Bengali:'nomoshkar',Urdu:'salaam'};
+const HELLO = {Spanish:'hola',French:'bonjour',Portuguese:'olá',German:'guten Tag',Italian:'ciao',Dutch:'goedemorgen',Arabic:'marhaba',Russian:'privet',Chinese:'nǐ hǎo',Japanese:'konnichiwa',Korean:'annyeonghaseyo',Swahili:'jambo',Turkish:'merhaba',Greek:'yia sou',Hindi:'namaste',Thai:'sawasdee',Vietnamese:'xin chào',Polish:'cześć',Swedish:'hej',Norwegian:'hei',Danish:'hej',Finnish:'moi',Icelandic:'halló',Indonesian:'halo',Filipino:'kumusta',Persian:'salaam',Czech:'ahoj',Hungarian:'szia',Romanian:'bună',Ukrainian:'pryvit',Malay:'apa khabar',Irish:'dia duit',Hebrew:'shalom',Nepali:'namaste',Bengali:'nomoshkar',Urdu:'salaam'};
 // "Thank you" in each language, so a witness can repeat a word instead of naming the language.
 const THANKS = {Spanish:'gracias',French:'merci',Portuguese:'obrigado',German:'danke',Italian:'grazie',Dutch:'dank je wel',Arabic:'shukran',Russian:'spasibo',Chinese:'xièxie',Swahili:'asante',Turkish:'teşekkürler',Swedish:'tack',Korean:'gamsahamnida',Afrikaans:'dankie',Slovak:'ďakujem',Albanian:'faleminderit',Greek:'efcharistó',Croatian:'hvala',Serbian:'hvala',Bosnian:'hvala',Montenegrin:'hvala',Slovene:'hvala',Vietnamese:'cảm ơn',Uzbek:'rahmat',Ukrainian:'dyakuyu',Thai:'khop khun',Tajik:'rahmat',Romanian:'mulțumesc',Moldavian:'mulțumesc',Polish:'dziękuję',Filipino:'salamat',Urdu:'shukriya','Norwegian Bokmål':'takk',Nepali:'dhanyabad',Mongolian:'bayarlalaa',Maltese:'grazzi',Malagasy:'misaotra',Macedonian:'blagodaram',Lithuanian:'ačiū',Latvian:'paldies',Lao:'khop chai',Kazakh:'rakhmet',Japanese:'arigatō',Hebrew:'toda',Irish:'go raibh maith agat','Persian (Farsi)':'mamnoon',Indonesian:'terima kasih',Malay:'terima kasih',Hindi:'dhanyavaad',Icelandic:'takk',Hungarian:'köszönöm','Haitian Creole':'mèsi',Georgian:'madloba',Finnish:'kiitos',Amharic:'ameseginalehu',Estonian:'aitäh',Danish:'tak',Czech:'děkuji',Khmer:'arkoun',Burmese:'kyay zu tin ba de',Bulgarian:'blagodarya',Belarusian:'dzyakuy',Bengali:'dhonnobad',Azerbaijani:'təşəkkür edirəm',Armenian:'shnorhakalutyun',Catalan:'gràcies',Dari:'tashakor',Pashto:'manana',Somali:'mahadsanid',Zulu:'ngiyabonga',Kinyarwanda:'murakoze',Kirundi:'murakoze',Sinhala:'istuti',Tamil:'nandri',Kyrgyz:'rakhmat',Turkmen:'sag bol',Samoan:"fa'afetai",Tongan:'mālō',Fijian:'vinaka',Dzongkha:'kadrinchey',Tigrinya:'yekenyeley',Sango:'singila',Lingala:'matondo',Shona:'ndatenda',Chewa:'zikomo',Tswana:'ke a leboga',Sotho:'kea leboha',Xhosa:'enkosi',Maldivian:'shukuriyya',Quechua:'sulpayki',Guaraní:'aguyje',Tetum:'obrigadu','Tok Pisin':'tenkyu',Sorani:'supas'};
 const PLURAL = /^(dollar|peso|franc|dinar|pound|rupee|shilling|riyal|rial|dirham|euro|ruble|real|rand|krona|krone|lira|manat|sol|leone|lev|kwacha|dram|lari|lempira|quetzal|colón|córdoba|boliviano|guaraní|balboa|rufiyaa|naira|cedi|birr|kina|tala|pula|loti|somoni|tenge|hryvnia|forint|denar|mark|lek|kuna|leu|zloty)$/i;
@@ -1964,8 +1969,14 @@ function pickWitnesses(d, P_, G){
   const base = k => k.replace(/2$/, '').replace(/^nature-.*/, 'nature');
   const last = new Set((G && G.lastK) || []), fav = k => /^(landmark|nature)/.test(k) ? -.5 : 0;
   const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.4 + 1.3 * (kc[base(c.k)] || 0) + (last.has(base(c.k)) ? 3 : 0) + fav(c.k)]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
+  // At least two clues that point to one specific place; at most one broad hint (language, money, region, climate, size, coast).
+  const strong = c => /^(landmark|nature|city|capital|border|nick|flag|shape)/.test(c.k) && !(c.k === 'border' && /no land borders/.test(c.txt));
   const chosen = [], roles = new Set(), kinds = new Set();
-  for (const c of ranked){ if (chosen.length >= 3) break; if (roles.has(c.w) || kinds.has(base(c.k))) continue; roles.add(c.w); kinds.add(base(c.k)); chosen.push(c); }
+  const take = (want, n) => { for (const c of ranked){ if (chosen.length >= n) break; if (!want(c) || roles.has(c.w) || kinds.has(base(c.k)) || chosen.includes(c)) continue; roles.add(c.w); kinds.add(base(c.k)); chosen.push(c); } };
+  take(strong, 2);
+  take(c => !strong(c), 3);
+  take(() => true, 3);
+  shuffle(chosen);
   chosen.forEach(c => kc[base(c.k)] = (kc[base(c.k)] || 0) + 1);
   if (G) G.lastK = chosen.map(c => base(c.k));
   return chosen;
@@ -2002,14 +2013,14 @@ function newCase(){
   for (let i = 0; i < legs; i++){ advance(sim, askCost(0) + askCost(1)); advance(sim, flightH(route[i].id, route[i+1].id)); }
   advance(sim, 1);
   const budget = sim.used + {easy:36, medium:28, hard:20}[S.diff];
-  return {v:2, set:S.set, diff:S.diff, ti, loot, route:route.map(d => d.id), legs, budget, used:0, at:0, wrong:null,
+  return {v:3, set:S.set, diff:S.diff, ti, loot, route:route.map(d => d.id), legs, budget, used:0, at:0, wrong:null,
     plan:traitPlan(ti), asked:{}, notes:[], warrant:{sex:'', hair:'', hobby:'', feature:'', vehicle:''}, issued:null, hench:{}, opts:null, optsAt:-1, msg:''};
 }
 
 function chaseBrief(){
   panel.innerHTML = ''; stage.innerHTML = '';
   const saved = store.get(chaseKey(), null), wins = (ST['chase-cases:all'] || [0,0])[0], nx = nextRank(wins);
-  const resumable = saved && saved.v === 2 && saved.route?.every(id => CAPS[id] && BY.get(id));
+  const resumable = saved && saved.v === 3 && saved.route?.every(id => CAPS[id] && BY.get(id));
   const map = makeMap(stage, {});
   if (resumable){
     const T = THIEVES[saved.ti];
