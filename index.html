@@ -1935,7 +1935,6 @@ function chaseClues(d, P_){
   // Cities
   const big = (d.big || [])[0]?.replace(/-Fayette$|-Davidson$|^Urban /, '');
   if (big && tier(d) <= 2 && !/Village|Valley City|^Woodlands$|[ḩḥḨṯ]/.test(big)) add('city', 'taxi', 'Taxi driver', 3, `${S_} ${oneOf([`said ${P_.p} would also stop in ${big}.`, `asked how long the train ride to ${big} takes.`, `was reading a guidebook about ${big}.`])}`);
-  add('capital', 'clerk', 'Hotel clerk', 4, `${S_} wrote a city name on a napkin. It started with "${cityOf(d.id)[0]}".`);
   // Borders and regions
   const nb = (d.b0 || d.b || []).map(id => BY.get(id)).filter(Boolean);
   if (nb.length === 1) add('border', 'pilot', 'Pilot', 2, `${S_} said ${P_.pp} next stop has only one neighbor: ${nb[0].n}.`);
@@ -1961,7 +1960,9 @@ function chaseClues(d, P_){
   if (!isUS && d.a > 2e6) add('size', 'agent', 'Travel agent', 2, `${S_} said ${P_.pp} next stop is one of the biggest countries on Earth.`);
   if (!isUS && d.a && d.a < 3000) add('size', 'agent', 'Travel agent', 3, `${S_} said ${P_.pp} next stop is so small you could cross it in an afternoon.`);
   if (lvl === 3 && silSVG(d)) add('shape', 'vendor', 'Street vendor', 3, `${S_} showed me the outline of the country on a map:`, {sil:d.id});
-  return out;
+  // Flight choices show city names, so never name the destination city in a clue.
+  const capName = cityOf(d.id).replace(/^(The|La|Le|El|Al)\s/i, '').split(/[,(]/)[0].trim();
+  return out.filter(c => capName.length < 4 || !c.txt.toLowerCase().includes(capName.toLowerCase()));
 }
 // Three different witnesses with three different kinds of clue, steering away from kinds already used in this case.
 function pickWitnesses(d, P_, G){
@@ -1970,7 +1971,7 @@ function pickWitnesses(d, P_, G){
   const last = new Set((G && G.lastK) || []), fav = k => /^(landmark|nature)/.test(k) ? -.5 : 0;
   const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.4 + 1.3 * (kc[base(c.k)] || 0) + (last.has(base(c.k)) ? 3 : 0) + fav(c.k)]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
   // At least two clues that point to one specific place; at most one broad hint (language, money, region, climate, size, coast).
-  const strong = c => /^(landmark|nature|city|capital|border|nick|flag|shape)/.test(c.k) && !(c.k === 'border' && /no land borders/.test(c.txt));
+  const strong = c => /^(landmark|nature|city|border|nick|flag|shape)/.test(c.k) && !(c.k === 'border' && /no land borders/.test(c.txt));
   const chosen = [], roles = new Set(), kinds = new Set();
   const take = (want, n) => { for (const c of ranked){ if (chosen.length >= n) break; if (!want(c) || roles.has(c.w) || kinds.has(base(c.k)) || chosen.includes(c)) continue; roles.add(c.w); kinds.add(base(c.k)); chosen.push(c); } };
   take(strong, 2);
