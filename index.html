@@ -1826,8 +1826,13 @@ const WICON = {
   clerk:'<path d="M3 21V8l9-5 9 5v13M9 21v-6h6v6"/>',
   vendor:'<path d="M3 9l2-5h14l2 5M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM5 13v8h14v-8"/>',
   pilot:'<path d="M2 16l20-6-3-2-7 2-5-5-2 1 3 6-4 1-2-2-1 1z"/>',
-  ranger:'<path d="M2 20l7-12 4 6 3-4 6 10z"/>'
+  ranger:'<path d="M2 20l7-12 4 6 3-4 6 10z"/>',
+  photo:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  captain:'<path d="M12 3v18M8 7h8M5 13a7 7 0 0 0 14 0M5 13H3M21 13h-2"/><circle cx="12" cy="4.5" r="1.5"/>',
+  waiter:'<path d="M4 10h13v3a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 11h2a2 2 0 0 1 0 4h-2.5M7 3v4M11 3v4M15 3v4"/>',
+  agent:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>'
 };
+const HELLO = {Spanish:'hola',French:'bonjour',Portuguese:'olá',German:'guten Tag',Italian:'ciao',Dutch:'hallo',Arabic:'marhaba',Russian:'privet',Chinese:'nǐ hǎo',Japanese:'konnichiwa',Korean:'annyeonghaseyo',Swahili:'jambo',Turkish:'merhaba',Greek:'yia sou',Hindi:'namaste',Thai:'sawasdee',Vietnamese:'xin chào',Polish:'cześć',Swedish:'hej',Norwegian:'hei',Danish:'hej',Finnish:'moi',Icelandic:'halló',Indonesian:'halo',Filipino:'kumusta',Persian:'salaam',Czech:'ahoj',Hungarian:'szia',Romanian:'bună',Ukrainian:'pryvit',Malay:'apa khabar',Irish:'dia duit',Hebrew:'shalom',Nepali:'namaste',Bengali:'nomoshkar',Urdu:'salaam'};
 // "Thank you" in each language, so a witness can repeat a word instead of naming the language.
 const THANKS = {Spanish:'gracias',French:'merci',Portuguese:'obrigado',German:'danke',Italian:'grazie',Dutch:'dank je wel',Arabic:'shukran',Russian:'spasibo',Chinese:'xièxie',Swahili:'asante',Turkish:'teşekkürler',Swedish:'tack',Korean:'gamsahamnida',Afrikaans:'dankie',Slovak:'ďakujem',Albanian:'faleminderit',Greek:'efcharistó',Croatian:'hvala',Serbian:'hvala',Bosnian:'hvala',Montenegrin:'hvala',Slovene:'hvala',Vietnamese:'cảm ơn',Uzbek:'rahmat',Ukrainian:'dyakuyu',Thai:'khop khun',Tajik:'rahmat',Romanian:'mulțumesc',Moldavian:'mulțumesc',Polish:'dziękuję',Filipino:'salamat',Urdu:'shukriya','Norwegian Bokmål':'takk',Nepali:'dhanyabad',Mongolian:'bayarlalaa',Maltese:'grazzi',Malagasy:'misaotra',Macedonian:'blagodaram',Lithuanian:'ačiū',Latvian:'paldies',Lao:'khop chai',Kazakh:'rakhmet',Japanese:'arigatō',Hebrew:'toda',Irish:'go raibh maith agat','Persian (Farsi)':'mamnoon',Indonesian:'terima kasih',Malay:'terima kasih',Hindi:'dhanyavaad',Icelandic:'takk',Hungarian:'köszönöm','Haitian Creole':'mèsi',Georgian:'madloba',Finnish:'kiitos',Amharic:'ameseginalehu',Estonian:'aitäh',Danish:'tak',Czech:'děkuji',Khmer:'arkoun',Burmese:'kyay zu tin ba de',Bulgarian:'blagodarya',Belarusian:'dzyakuy',Bengali:'dhonnobad',Azerbaijani:'təşəkkür edirəm',Armenian:'shnorhakalutyun',Catalan:'gràcies',Dari:'tashakor',Pashto:'manana',Somali:'mahadsanid',Zulu:'ngiyabonga',Kinyarwanda:'murakoze',Kirundi:'murakoze',Sinhala:'istuti',Tamil:'nandri',Kyrgyz:'rakhmat',Turkmen:'sag bol',Samoan:"fa'afetai",Tongan:'mālō',Fijian:'vinaka',Dzongkha:'kadrinchey',Tigrinya:'yekenyeley',Sango:'singila',Lingala:'matondo',Shona:'ndatenda',Chewa:'zikomo',Tswana:'ke a leboga',Sotho:'kea leboha',Xhosa:'enkosi',Maldivian:'shukuriyya',Quechua:'sulpayki',Guaraní:'aguyje',Tetum:'obrigadu','Tok Pisin':'tenkyu',Sorani:'supas'};
 const PLURAL = /^(dollar|peso|franc|dinar|pound|rupee|shilling|riyal|rial|dirham|euro|ruble|real|rand|krona|krone|lira|manat|sol|leone|lev|kwacha|dram|lari|lempira|quetzal|colón|córdoba|boliviano|guaraní|balboa|rufiyaa|naira|cedi|birr|kina|tala|pula|loti|somoni|tenge|hryvnia|forint|denar|mark|lek|kuna|leu|zloty)$/i;
@@ -1871,36 +1876,98 @@ function modeChase(){
 }
 
 // Destination clues about a place, from direct (low h) to indirect (high h).
+// Clues about the NEXT stop. Each has a kind (k) so a case never leans on the same kind over and over,
+// a witness role (w), and how hard it is (h: 1 easy to 4 hardest).
+const oneOf = a => a[Math.random() * a.length | 0];
+const CUL_VERB = {
+  monument:[n => `wanted directions to ${n}.`, n => `wanted a selfie in front of ${n}.`],
+  ancient:[n => `wanted to explore the ruins at ${n}.`, n => `asked if you can still walk around ${n}.`],
+  religious:[n => `asked what to wear to visit ${n}.`, n => `wanted to see ${n} at sunrise.`],
+  building:[n => `asked if you can go up inside ${n}.`, n => `wanted a photo in front of ${n}.`],
+  engineering:[n => `couldn't stop talking about ${n}.`, n => `wanted to see ${n} up close.`],
+  place:[n => `asked how crowded ${n} gets.`, n => `wanted to spend a whole day at ${n}.`]};
+const NAT_VERB = {
+  river:[n => `asked about boat trips on the ${n}.`, n => `wanted to go fishing on the ${n}.`, n => `bought a map of the ${n}.`],
+  lake:[n => `wanted to go swimming in ${n}.`, n => `asked about kayaks on ${n}.`],
+  sea:[n => `bought a ticket for a cruise on the ${n}.`, n => `asked how warm the water is in the ${n}.`],
+  mountain:[n => `bought hiking boots for the ${n}.`, n => `asked about ski trips in the ${n}.`],
+  desert:[n => `wanted to ride a camel across the ${n}.`, n => `bought ten bottles of water for a trip into the ${n}.`],
+  land:[n => `wanted to explore the ${n}.`],
+  peak:[n => `was training to climb ${n}.`, n => `wanted a view of ${n}.`],
+  island:[n => `was looking for a ferry to ${n}.`]};
+const STATE_NICK = {AL:'Yellowhammer State',AK:'Last Frontier',AZ:'Grand Canyon State',AR:'Natural State',CA:'Golden State',CO:'Centennial State',CT:'Constitution State',DE:'First State',FL:'Sunshine State',GA:'Peach State',HI:'Aloha State',ID:'Gem State',IL:'Prairie State',IN:'Hoosier State',IA:'Hawkeye State',KS:'Sunflower State',KY:'Bluegrass State',LA:'Pelican State',ME:'Pine Tree State',MD:'Old Line State',MA:'Bay State',MI:'Great Lakes State',MN:'North Star State',MS:'Magnolia State',MO:'Show-Me State',MT:'Treasure State',NE:'Cornhusker State',NV:'Silver State',NH:'Granite State',NJ:'Garden State',NM:'Land of Enchantment',NY:'Empire State',NC:'Tar Heel State',ND:'Peace Garden State',OH:'Buckeye State',OK:'Sooner State',OR:'Beaver State',PA:'Keystone State',RI:'Ocean State',SC:'Palmetto State',SD:'Mount Rushmore State',TN:'Volunteer State',TX:'Lone Star State',UT:'Beehive State',VT:'Green Mountain State',VA:'Old Dominion',WA:'Evergreen State',WV:'Mountain State',WI:'Badger State',WY:'Equality State'};
+const US_COAST = new Set(['AL','AK','CA','CT','DE','FL','GA','HI','LA','ME','MD','MA','MS','NH','NJ','NY','NC','OR','RI','SC','TX','VA','WA']);
+const NAT_WHO = {river:['captain','Boat captain'], lake:['captain','Boat captain'], sea:['captain','Boat captain'], island:['captain','Ferry captain']};
 function chaseClues(d, P_){
   const S_ = P_.P, out = [], isUS = d.type === 'state', lvl = {easy:1, medium:2, hard:3}[S.diff];
+  const add = (k, w, who, h, txt, more) => out.push(Object.assign({k, w, who, h, txt}, more || {}));
+  // Landmarks from Culture
   const lms = CUL.filter(l => isUS ? l.s === d.id : l.c === d.id).sort((a,b) => a.t - b.t);
-  if (lms[0]) out.push({w:'guide', who:'Museum guide', h:lms[0].t, txt: lvl < 3 ? `${S_} asked me the best time to visit ${theName(lms[0].n)}.` : `${S_} wanted to see a famous ${CWORD[lms[0].k]} in ${lms[0].city}.`});
-  if (lvl === 1) out.push({w:'vendor', who:'Street vendor', h:1, txt:`${S_} dropped this flag at my stall:`, flag:d.id});
-  if (!isUS){
-    const cur = (d.cur || [])[0]; if (cur) out.push({w:'bank', who:'Bank teller', h:2, txt:`${S_} changed all ${P_.pp} money into ${bareMoney(cur)}.`});
-    const langs = (d.lang || []).filter(l => l !== 'English'); const lang = langs.find(l => THANKS[l]) || langs[0];
-    if (lang && lvl === 1) out.push({w:'clerk', who:'Hotel clerk', h:1, txt:`${S_} was practicing ${P_.pp} ${lang} at the front desk.`});
-    else if (lang && THANKS[lang]) out.push({w:'clerk', who:'Hotel clerk', h:2, txt:`${S_} kept saying "${THANKS[lang]}" to everyone. I think it means thank you.`});
-  }
+  lms.slice(0, 3).forEach((l, i) => {
+    const kind = i === 0 ? 'landmark' : 'landmark2', [w, who] = oneOf([['guide','Museum guide'], ['photo','Photographer'], ['agent','Travel agent']]);
+    if (lvl === 3 && l.t <= 2 && Math.random() < .6) add(kind, w, who, 3, `${S_} wanted to see a famous ${CWORD[l.k]} in ${l.city}.`);
+    else add(kind, w, who, l.t + (i ? 1 : 0), `${S_} ${oneOf(CUL_VERB[l.k] || CUL_VERB.place)(theName(l.n))}`);
+  });
+  // Rivers, lakes, seas, mountains, deserts from Nature (only ones shared by three places or fewer)
   const nats = (NAT || []).filter(f => (isUS ? f.s.includes(d.id) && f.s.length <= 3 : f.c.includes(d.id) && f.c.length <= 3) && f.tier <= Math.max(2, lvl)).sort((a,b) => a.tier - b.tier);
-  const NV = {river:n => `${S_} asked about boat trips on the ${n}.`, lake:n => `${S_} wanted to go swimming in ${n}.`, sea:n => `${S_} bought a ticket for a cruise on the ${n}.`, mountain:n => `${S_} bought hiking boots for the ${n}.`, desert:n => `${S_} wanted to ride a camel across the ${n}.`, land:n => `${S_} wanted to explore the ${n}.`, peak:n => `${S_} was training to climb ${n}.`, island:n => `${S_} was looking for a ferry to ${n}.`};
-  if (nats[0]) out.push({w:'ranger', who:'Park ranger', h: nats[0].tier + 1, txt: NV[nats[0].type](nats[0].n)});
-  if (d.big?.[0]) out.push({w:'taxi', who:'Taxi driver', h:2, txt:`${S_} said ${P_.p} would also stop in ${d.big[0]}.`});
+  const seenT = new Set();
+  nats.filter(f => !seenT.has(f.type) && seenT.add(f.type)).slice(0, 3).forEach((f, i) => {
+    const [w, who] = NAT_WHO[f.type] || ['ranger','Park ranger'];
+    add('nature-' + f.type, w, who, f.tier + (f.s?.length > 1 || f.c?.length > 1 ? 1 : 0), `${S_} ${oneOf(NAT_VERB[f.type] || NAT_VERB.land)(f.n)}`);
+  });
+  if (lvl === 1) add('flag', 'vendor', 'Street vendor', 1, `${S_} dropped this flag at my stall:`, {flag:d.id});
+  if (!isUS){
+    const cur = (d.cur || [])[0];
+    if (cur) add('money', 'bank', 'Bank teller', 2, `${S_} ${oneOf([`changed all ${P_.pp} money into ${bareMoney(cur)}.`, `asked if I had any ${bareMoney(cur)} left over.`, `wanted to know how many ${bareMoney(cur)} you get for a dollar.`])}`);
+    const langs = (d.lang || []).filter(l => l !== 'English');
+    const lh = langs.find(l => HELLO[l]), lt = langs.find(l => THANKS[l]);
+    if (lvl === 1 && langs[0]) add('lang', 'clerk', 'Hotel clerk', 1, `${S_} was practicing ${P_.pp} ${lt || lh || langs[0]} at the front desk.`);
+    else {
+      if (lt) add('lang', 'waiter', 'Waiter', 2, `${S_} kept saying "${THANKS[lt]}" to everyone. I think it means thank you.`);
+      if (lh) add('lang', 'clerk', 'Hotel clerk', 2, `${S_} greeted me with "${HELLO[lh]}." That's hello somewhere, right?`);
+    }
+  }
+  // Cities
+  const big = (d.big || [])[0]?.replace(/-Fayette$|-Davidson$|^Urban /, '');
+  if (big && tier(d) <= 2 && !/Village|Valley City|^Woodlands$|[ḩḥḨṯ]/.test(big)) add('city', 'taxi', 'Taxi driver', 3, `${S_} ${oneOf([`said ${P_.p} would also stop in ${big}.`, `asked how long the train ride to ${big} takes.`, `was reading a guidebook about ${big}.`])}`);
+  add('capital', 'clerk', 'Hotel clerk', 4, `${S_} wrote a city name on a napkin. It started with "${cityOf(d.id)[0]}".`);
+  // Borders and regions
   const nb = (d.b0 || d.b || []).map(id => BY.get(id)).filter(Boolean);
-  if (nb.length >= 2) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} said ${P_.pp} next stop borders ${nb.slice(0,2).map(x => x.n).join(' and ')}.`});
-  else if (!isUS && !nb.length) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} was headed to a country with no land borders at all.`});
-  if (isUS) out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked about flights to the ${usRegion(d.id)}.`});
-  else out.push({w:'pilot', who:'Pilot', h:3, txt:`${S_} asked for a flight to ${d.sr || d.r}.`});
-  if (!isUS && d.ll) out.push({w:'taxi', who:'Taxi driver', h:3, txt:`${S_} complained there wouldn't be any beaches where ${P_.p} was going.`});
-  if (lvl === 3 && silSVG(d)) out.push({w:'vendor', who:'Street vendor', h:3, txt:`${S_} showed me the outline of the country on a map:`, sil:d.id});
-  out.push({w:'clerk', who:'Hotel clerk', h:4, txt:`${S_} wrote a city name on a napkin. It started with "${cityOf(d.id)[0]}".`});
+  if (nb.length === 1) add('border', 'pilot', 'Pilot', 2, `${S_} said ${P_.pp} next stop has only one neighbor: ${nb[0].n}.`);
+  else if (nb.length >= 2) add('border', 'pilot', 'Pilot', 3, `${S_} said ${P_.pp} next stop borders ${nb.slice(0,2).map(x => x.n).join(' and ')}.`);
+  else if (!isUS) add('border', 'captain', 'Ferry captain', 2, `${S_} was headed to a country with no land borders at all.`);
+  const reg = isUS ? 'the ' + usRegion(d.id) : (/^(Caribbean|Middle East|Americas)$/.test(d.sr || d.r) ? 'the ' : '') + (d.sr || d.r);
+  add('region', 'agent', 'Travel agent', 3, `${S_} ${oneOf([`asked for a flight to ${reg}.`, `booked a tour of ${reg}.`])}`);
+  if (!isUS && d.ll) add('coast', 'taxi', 'Taxi driver', 3, `${S_} complained there wouldn't be any beaches where ${P_.p} was going.`);
+  // Climate from latitude, and size
+  const lat = d.cen?.[1];
+  if (isUS && STATE_NICK[d.id]) add('nick', 'waiter', 'Waiter', 2, `${S_} ${oneOf([`said ${P_.p} couldn't wait to get to the ${STATE_NICK[d.id]}.`, `was wearing a T-shirt that said "${STATE_NICK[d.id]}."`])}`);
+  if (isUS && !US_COAST.has(d.id)) add('coast', 'taxi', 'Taxi driver', 3, `${S_} said there's no ocean anywhere near where ${P_.p} is headed.`);
+  if (isUS && d.a > 350000) add('size', 'agent', 'Travel agent', 2, `${S_} said ${P_.pp} next stop is one of the biggest states.`);
+  if (isUS && d.a < 25000) add('size', 'agent', 'Travel agent', 2, `${S_} said ${P_.pp} next stop is one of the smallest states.`);
+  if (lat != null && isUS){
+    if (lat < 31) add('climate', 'vendor', 'Shopkeeper', 3, `${S_} said it stays warm there even in the middle of winter.`);
+    else if (lat > 44) add('climate', 'vendor', 'Shopkeeper', 3, `${S_} bought snow boots. ${P_.P} said the winters there are brutal.`);
+  } else if (lat != null){
+    if (lat < -15) add('climate', 'vendor', 'Shopkeeper', 3, `${S_} said the seasons are flipped where ${P_.p} is going, so it's summer there at Christmas.`);
+    else if (Math.abs(lat) < 12) add('climate', 'vendor', 'Shopkeeper', 3, `${S_} only bought shorts. ${P_.P} said it's hot there all year long.`);
+    else if (lat > 55) add('climate', 'vendor', 'Shopkeeper', 3, `${S_} bought a heavy coat and asked how long the winter nights last.`);
+  }
+  if (!isUS && d.a > 2e6) add('size', 'agent', 'Travel agent', 2, `${S_} said ${P_.pp} next stop is one of the biggest countries on Earth.`);
+  if (!isUS && d.a && d.a < 3000) add('size', 'agent', 'Travel agent', 3, `${S_} said ${P_.pp} next stop is so small you could cross it in an afternoon.`);
+  if (lvl === 3 && silSVG(d)) add('shape', 'vendor', 'Street vendor', 3, `${S_} showed me the outline of the country on a map:`, {sil:d.id});
   return out;
 }
-function pickWitnesses(d, P_){
-  const lvl = {easy:1, medium:2, hard:3}[S.diff], all = chaseClues(d, P_);
-  const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.2]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
-  const chosen = [], roles = new Set();
-  for (const c of ranked){ if (chosen.length >= 3) break; if (roles.has(c.w)) continue; roles.add(c.w); chosen.push(c); }
+// Three different witnesses with three different kinds of clue, steering away from kinds already used in this case.
+function pickWitnesses(d, P_, G){
+  const lvl = {easy:1, medium:2, hard:3}[S.diff], all = chaseClues(d, P_), kc = (G && (G.kc = G.kc || {})) || {};
+  const base = k => k.replace(/2$/, '').replace(/^nature-.*/, 'nature');
+  const last = new Set((G && G.lastK) || []), fav = k => /^(landmark|nature)/.test(k) ? -.5 : 0;
+  const ranked = all.map(c => [c, Math.abs(c.h - lvl) + Math.random() * 1.4 + 1.3 * (kc[base(c.k)] || 0) + (last.has(base(c.k)) ? 3 : 0) + fav(c.k)]).sort((a,b) => a[1] - b[1]).map(x => x[0]);
+  const chosen = [], roles = new Set(), kinds = new Set();
+  for (const c of ranked){ if (chosen.length >= 3) break; if (roles.has(c.w) || kinds.has(base(c.k))) continue; roles.add(c.w); kinds.add(base(c.k)); chosen.push(c); }
+  chosen.forEach(c => kc[base(c.k)] = (kc[base(c.k)] || 0) + 1);
+  if (G) G.lastK = chosen.map(c => base(c.k));
   return chosen;
 }
 // Which traits to reveal: the fewest that pick this thief out of the gang, then the rest.
@@ -2057,7 +2124,7 @@ function chaseCity(map, lay, G){
     let w;
     if (G.wrong || final) w = [{w:'clerk', who:'Hotel clerk'}, {w:'taxi', who:'Taxi driver'}, {w:'guide', who:'Museum guide'}];
     else {
-      w = pickWitnesses(pl(G.route[G.at + 1]), P_);
+      w = pickWitnesses(pl(G.route[G.at + 1]), P_, G);
       const cat = G.plan[G.at % G.plan.length], slot = Math.random() * w.length | 0;
       w[slot] = Object.assign({}, w[slot], {trait:cat});
       if (G.at >= 1 && Math.random() < .45){ const hs = (slot + 1 + (Math.random() * 2 | 0)) % w.length; w[hs] = Object.assign({}, w[hs], {hench:Math.random() * HENCH.length | 0}); }
